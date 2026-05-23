@@ -25,4 +25,8 @@ local bob_down = actions.CCEaseSineInOut.create(actions.CCMoveBy.create(2, 0, -3
 local bob = actions.CCSequence.create({ bob_up, bob_down })
 PlayerBoat:runAction(actions.CCRepeatForever.create(bob))
 
+cocos.scheduler.schedule(function()
+    PlayerBoat:setRotation(Player.getWaterWaveRotation())
+end, 0.05)
+
 print("FishRNG bootstrap loaded")

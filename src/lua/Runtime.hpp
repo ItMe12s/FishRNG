@@ -13,6 +13,7 @@
 #include <string_view>
 #include <thread>
 #include <unordered_map>
+#include <vector>
 
 namespace luax {
     class Requirer;
@@ -33,6 +34,9 @@ namespace luax {
         bool protectedCall(int nargs, int nresults, std::string_view context, int deadlineMs = 50);
         void runOnMain(std::function<void()> fn);
         void assertMainThread() const;
+
+        // Shutdown hooks run (last-in, first-out) during destruction, before lua_close.
+        void registerShutdownHook(std::function<void()> fn);
 
         std::string const& getOrCompileBytecode(std::string const& key, std::string const& source);
 
@@ -66,5 +70,7 @@ namespace luax {
         std::unordered_map<std::string, std::string> m_bytecodeCache;
 
         std::unique_ptr<Requirer> m_requirer;
+
+        std::vector<std::function<void()>> m_shutdownHooks;
     };
 }

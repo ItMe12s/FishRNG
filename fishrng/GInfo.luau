@@ -8,7 +8,7 @@ local GInfo = {}
 GInfo.FishingRodIDs = {
     ["Stick"] = {
         "rodStick.png",
-        -15, 0, -30
+        -15, 0, -45
     },
 }
 

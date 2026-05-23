@@ -9,6 +9,11 @@ local Player = {}
 Player.FishingRodID = "Stick"
 Player.FishingRodSprite = nil
 
+function Player.getWaterWaveRotation()
+    local t = os.clock() * 1e-6
+    return math.noise(t) * 15
+end
+
 function Player.refreshFishingRod(playerSprite)
     if Player.FishingRodSprite then
         local parent = Player.FishingRodSprite:getParent()
@@ -28,7 +33,7 @@ function Player.refreshFishingRod(playerSprite)
     rod:setPosition(rodInfo[2], rodInfo[3])
     rod:setRotation(rodInfo[4])
 
-    playerSprite:addChild(rod, 1)
+    playerSprite:addChild(rod, 0)
     Player.FishingRodSprite = rod
 end
 

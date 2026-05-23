@@ -112,11 +112,21 @@ namespace luax {
     }
 
     Runtime::~Runtime() {
+        for (auto it = m_shutdownHooks.rbegin(); it != m_shutdownHooks.rend(); ++it) {
+            (*it)();
+        }
+        m_shutdownHooks.clear();
+
         if (m_state) {
             lua_close(m_state);
             m_state = nullptr;
         }
         geode::log::info("luau runtime shutdown");
+    }
+
+    void Runtime::registerShutdownHook(std::function<void()> fn) {
+        assertMainThread();
+        if (fn) m_shutdownHooks.push_back(std::move(fn));
     }
 
     Runtime& Runtime::instance() {
