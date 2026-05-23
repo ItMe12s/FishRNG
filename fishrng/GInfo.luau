@@ -1,5 +1,3 @@
----@diagnostic disable-next-line: undefined-field
-local geode = _G.geode
 local cocos = geode.cocos2d
 
 local GInfo = {}

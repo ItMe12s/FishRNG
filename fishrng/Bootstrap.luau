@@ -1,5 +1,3 @@
----@diagnostic disable-next-line: undefined-field
-local geode = _G.geode
 local cocos = geode.cocos2d
 local actions = cocos.actions
 
@@ -28,5 +26,3 @@ PlayerBoat:runAction(actions.CCRepeatForever.create(bob))
 cocos.scheduler.schedule(function()
     PlayerBoat:setRotation(Player.getWaterWaveRotation())
 end, 0.01)
-
-print("FishRNG bootstrap loaded")

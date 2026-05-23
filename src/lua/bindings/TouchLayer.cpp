@@ -192,10 +192,10 @@ namespace {
             auto local = sprite ? sprite->convertToNodeSpace(world) : cocos2d::CCPointZero;
 
             lua_createtable(L, 0, 5);
-            lua_pushnumber(L, world.x); lua_setfield(L, -2, "x");
-            lua_pushnumber(L, world.y); lua_setfield(L, -2, "y");
-            lua_pushnumber(L, local.x); lua_setfield(L, -2, "localX");
-            lua_pushnumber(L, local.y); lua_setfield(L, -2, "localY");
+            lua_pushnumber(L, world.x);    lua_setfield(L, -2, "x");
+            lua_pushnumber(L, world.y);    lua_setfield(L, -2, "y");
+            lua_pushnumber(L, local.x);    lua_setfield(L, -2, "localX");
+            lua_pushnumber(L, local.y);    lua_setfield(L, -2, "localY");
             lua_pushinteger(L, target.id); lua_setfield(L, -2, "targetId");
 
             runtime.protectedCall(1, 0, "TouchLayer tap callback", 50);
@@ -296,9 +296,9 @@ namespace {
 
     void bindTouchLayer(lua_State* L) {
         Usertype<LuaTouchLayer>::registerType(L, "TouchLayer", { Usertype<cocos2d::CCLayer>::tag() });
-        Usertype<LuaTouchLayer>::method(L, "addTapTarget", &touchlayer_addTapTarget);
-        Usertype<LuaTouchLayer>::method(L, "removeTapTarget", &touchlayer_removeTapTarget);
-        Usertype<LuaTouchLayer>::method(L, "clearTapTargets", &touchlayer_clearTapTargets);
+        Usertype<LuaTouchLayer>::method(L, "addTapTarget",     &touchlayer_addTapTarget);
+        Usertype<LuaTouchLayer>::method(L, "removeTapTarget",  &touchlayer_removeTapTarget);
+        Usertype<LuaTouchLayer>::method(L, "clearTapTargets",  &touchlayer_clearTapTargets);
         Usertype<LuaTouchLayer>::method(L, "setTouchPriority", &touchlayer_setTouchPriority);
 
         getOrCreateTable(L, "geode");
