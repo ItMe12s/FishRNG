@@ -1,5 +1,5 @@
 -- .vscode/settings.json
--- "luau-lsp.types.definitionFiles": ["${workspaceFolder}/types/geode.d.luau"]
+-- "luau-lsp.types.definitionFiles": { "@geode": "${workspaceFolder}/types/geode.d.luau" }
 -- Source of truth for each declaration is the matching binding under src/lua/bindings/*.cpp
 
 declare class CCObject
@@ -71,13 +71,13 @@ end
 declare class CCLabelBMFont extends CCNode
     function setString(self, text: string)
     function getString(self): string
-    function setColor(self, color: { r: number, g: number, b: number })
+    function setColor(self, color: RGBColor)
 end
 
 declare class CCDirector extends CCObject
-    function getWinSize(self): { width: number, height: number }
-    function getVisibleOrigin(self): { x: number, y: number }
-    function getVisibleSize(self): { width: number, height: number }
+    function getWinSize(self): CCSize
+    function getVisibleOrigin(self): CCPoint
+    function getVisibleSize(self): CCSize
 end
 
 declare class CCAction extends CCObject
@@ -142,25 +142,29 @@ declare class GameManager extends CCNode
     function getPlayerColor2(self): number
     function getPlayerGlow(self): boolean
     function getPlayerGlowColor(self): number
-    function colorForIdx(self, idx: number): { r: number, g: number, b: number }
+    function colorForIdx(self, idx: number): RGBColor
 end
 
 declare class SimplePlayer extends CCSprite
     function updatePlayerFrame(self, id: number, type: number)
-    function setColor(self, color: { r: number, g: number, b: number })
-    function setSecondColor(self, color: { r: number, g: number, b: number })
-    function setColors(self, primary: { r: number, g: number, b: number }, secondary: { r: number, g: number, b: number })
+    function setColor(self, color: RGBColor)
+    function setSecondColor(self, color: RGBColor)
+    function setColors(self, primary: RGBColor, secondary: RGBColor)
     function updateColors(self)
     function hideSecondary(self)
     function hideAll(self)
-    function setGlowOutline(self, color: { r: number, g: number, b: number })
-    function enableCustomGlowColor(self, color: { r: number, g: number, b: number })
+    function setGlowOutline(self, color: RGBColor)
+    function enableCustomGlowColor(self, color: RGBColor)
     function disableCustomGlowColor(self)
 end
 
 declare class OverlayManager extends CCNode end
 
-type TapEvent = {
+export type RGBColor = { r: number, g: number, b: number }
+export type CCSize = { width: number, height: number }
+export type CCPoint = { x: number, y: number }
+
+export type TapEvent = {
     x: number,
     y: number,
     localX: number,
@@ -175,21 +179,21 @@ declare class TouchLayer extends CCLayer
     function setTouchPriority(self, priority: number)
 end
 
-type CCSpriteFactory = {
+export type CCSpriteFactory = {
     create: () -> CCSprite,
     createWithSpriteFrameName: (name: string) -> CCSprite,
     createWithSpriteFrame: (frame: CCSpriteFrame) -> CCSprite,
 }
-type CCLayerFactory = { create: () -> CCLayer }
-type CCDirectorFactory = { sharedDirector: () -> CCDirector }
-type CCSpriteFrameCacheFactory = { sharedSpriteFrameCache: () -> CCSpriteFrameCache }
-type CCLabelBMFontFactory = { create: (text: string, font: string) -> CCLabelBMFont }
+export type CCLayerFactory = { create: () -> CCLayer }
+export type CCDirectorFactory = { sharedDirector: () -> CCDirector }
+export type CCSpriteFrameCacheFactory = { sharedSpriteFrameCache: () -> CCSpriteFrameCache }
+export type CCLabelBMFontFactory = { create: (text: string, font: string) -> CCLabelBMFont }
 
-type EaseFactory<T> = { create: (action: CCActionInterval) -> T }
-type EaseRateFactory<T> = { create: (action: CCActionInterval, rate: number) -> T }
-type EaseElasticFactory<T> = { create: (action: CCActionInterval, period: number?) -> T }
+export type EaseFactory<T> = { create: (action: CCActionInterval) -> T }
+export type EaseRateFactory<T> = { create: (action: CCActionInterval, rate: number) -> T }
+export type EaseElasticFactory<T> = { create: (action: CCActionInterval, period: number?) -> T }
 
-type ActionsNamespace = {
+export type ActionsNamespace = {
     CCMoveTo: { create: (duration: number, x: number, y: number) -> CCMoveTo },
     CCMoveBy: { create: (duration: number, dx: number, dy: number) -> CCMoveBy },
     CCScaleTo: { create: ((duration: number, scale: number) -> CCScaleTo) & ((duration: number, sx: number, sy: number) -> CCScaleTo) },
@@ -222,12 +226,12 @@ type ActionsNamespace = {
     CCEaseBackInOut: EaseFactory<CCEaseBackInOut>,
 }
 
-type SchedulerNamespace = {
+export type SchedulerNamespace = {
     schedule: (callback: () -> (), interval: number) -> number,
     unschedule: (id: number) -> boolean,
 }
 
-type Cocos2dNamespace = {
+export type Cocos2dNamespace = {
     CCDirector: CCDirectorFactory,
     CCSprite: CCSpriteFactory,
     CCLayer: CCLayerFactory,
@@ -238,7 +242,7 @@ type Cocos2dNamespace = {
     actions: ActionsNamespace,
 }
 
-type IconTypeEnum = {
+export type IconTypeEnum = {
     Cube: number,
     Ship: number,
     Ball: number,
@@ -254,7 +258,7 @@ type IconTypeEnum = {
     ShipFire: number,
 }
 
-type GeodeNamespace = {
+export type GeodeNamespace = {
     expandSpriteName: (name: string) -> string,
     modResourcesPath: () -> string,
     GameManager: { get: () -> GameManager },

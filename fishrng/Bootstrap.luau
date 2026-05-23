@@ -12,7 +12,7 @@ local layer: TouchLayer = geode.TouchLayer.create()
 
 layer:addChild(playerRoot)
 overlay:addChild(layer)
-layer:addTapTarget(playerRoot, function()
+layer:addTapTarget(playerRoot, function(_tap: TapEvent)
     -- print(("tapped at %.1f %.1f"):format(tap.x, tap.y))
 end)
 playerRoot:setPosition(win_width - 50, 0)

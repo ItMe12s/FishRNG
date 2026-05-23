@@ -2,11 +2,18 @@ local cocos = geode.cocos2d
 
 type BoatInfo = {
     texture: string,
+    description: string,
+    cost: number,
+    -- Custom data
+    maxFish: number,
 }
 
 local boatData: { [string]: BoatInfo } = {
     ["Wooden"] = {
         texture = "boatWooden.png",
+        description = "Starter boat. A wooden one.",
+        cost = 0,
+        maxFish = 5,
     },
 }
 

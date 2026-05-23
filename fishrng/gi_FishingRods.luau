@@ -2,19 +2,20 @@ local cocos = geode.cocos2d
 
 type FishingRodInfo = {
     texture: string,
-    offsetX: number,
-    offsetY: number,
-    rotation: number,
     description: string,
+    cost: number,
+    -- Custom data
+    offsetX: number, offsetY: number, rotation: number,
+    luckBoost: number,
 }
 
 local rodData: { [string]: FishingRodInfo } = {
     ["Stick"] = {
         texture = "rodStick.png",
-        offsetX = -15,
-        offsetY = 0,
-        rotation = -45,
         description = "Starter rod. Genuinely a stick.",
+        cost = 0,
+        offsetX = -15, offsetY = 0, rotation = -45,
+        luckBoost = 0,
     },
 }
 
