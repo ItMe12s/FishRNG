@@ -11,6 +11,12 @@
 	"version": "v1.0.0",
 	"developer": "imes",
 	"description": "Idle fishing game at your screen corner.",
+	"resources": {
+		"files": [
+			"fishrng/*.lua",
+			"resources/*.png"
+		]
+	},
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
 	}
