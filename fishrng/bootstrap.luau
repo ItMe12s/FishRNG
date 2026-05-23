@@ -18,16 +18,14 @@ local player = geode.SimplePlayer.create(icon_id)
 player:updatePlayerFrame(icon_id, geode.IconType.Cube)
 player:setColor(gm:colorForIdx(gm:getPlayerColor()))
 player:setSecondColor(gm:colorForIdx(gm:getPlayerColor2()))
-player:setScale(0.55)
+if gm:getPlayerGlow() then
+    player:setGlowOutline(gm:colorForIdx(gm:getPlayerGlowColor()))
+end
+
+player:setScale(1.25)
 player:setPosition(win_size.width - 32, 40)
 
-local label = cocos.CCLabelBMFont.create("FishRNG", "bigFont.fnt")
-label:setScale(0.25)
-label:setPosition(win_size.width - 32, 14)
-label:setColor({ r = 255, g = 230, b = 120 })
-
 layer:addChild(player)
-layer:addChild(label)
 overlay:addChild(layer)
 
 local bob_up = actions.CCMoveBy.create(0.65, 0, 5)

@@ -98,16 +98,46 @@ namespace {
         return 0;
     }
 
+    int simpleplayer_setGlowOutline(lua_State* L) {
+        auto self = Usertype<SP>::check(L, 1, "SimplePlayer:setGlowOutline");
+        assertMainThread();
+        if (lua_type(L, 2) != LUA_TTABLE) {
+            luaL_error(L, "SimplePlayer:setGlowOutline expected color table");
+        }
+        self->setGlowOutline(toColor3B(L, 2, "SimplePlayer:setGlowOutline"));
+        return 0;
+    }
+
+    int simpleplayer_enableCustomGlowColor(lua_State* L) {
+        auto self = Usertype<SP>::check(L, 1, "SimplePlayer:enableCustomGlowColor");
+        assertMainThread();
+        if (lua_type(L, 2) != LUA_TTABLE) {
+            luaL_error(L, "SimplePlayer:enableCustomGlowColor expected color table");
+        }
+        self->enableCustomGlowColor(toColor3B(L, 2, "SimplePlayer:enableCustomGlowColor"));
+        return 0;
+    }
+
+    int simpleplayer_disableCustomGlowColor(lua_State* L) {
+        auto self = Usertype<SP>::check(L, 1, "SimplePlayer:disableCustomGlowColor");
+        assertMainThread();
+        self->disableCustomGlowColor();
+        return 0;
+    }
+
     void bindSimplePlayer(lua_State* L) {
         Usertype<SP>::registerType(L, "SimplePlayer", { Usertype<cocos2d::CCSprite>::tag() });
 
-        Usertype<SP>::method(L, "updatePlayerFrame", &simpleplayer_updatePlayerFrame);
-        Usertype<SP>::method(L, "setColor",          &simpleplayer_setColor);
-        Usertype<SP>::method(L, "setSecondColor",    &simpleplayer_setSecondColor);
-        Usertype<SP>::method(L, "setColors",         &simpleplayer_setColors);
-        Usertype<SP>::method(L, "updateColors",      &simpleplayer_updateColors);
-        Usertype<SP>::method(L, "hideSecondary",     &simpleplayer_hideSecondary);
-        Usertype<SP>::method(L, "hideAll",           &simpleplayer_hideAll);
+        Usertype<SP>::method(L, "updatePlayerFrame",      &simpleplayer_updatePlayerFrame);
+        Usertype<SP>::method(L, "setColor",               &simpleplayer_setColor);
+        Usertype<SP>::method(L, "setSecondColor",         &simpleplayer_setSecondColor);
+        Usertype<SP>::method(L, "setColors",              &simpleplayer_setColors);
+        Usertype<SP>::method(L, "updateColors",           &simpleplayer_updateColors);
+        Usertype<SP>::method(L, "hideSecondary",          &simpleplayer_hideSecondary);
+        Usertype<SP>::method(L, "hideAll",                &simpleplayer_hideAll);
+        Usertype<SP>::method(L, "setGlowOutline",         &simpleplayer_setGlowOutline);
+        Usertype<SP>::method(L, "enableCustomGlowColor",  &simpleplayer_enableCustomGlowColor);
+        Usertype<SP>::method(L, "disableCustomGlowColor", &simpleplayer_disableCustomGlowColor);
 
         getOrCreateTable(L, "geode");
         lua_createtable(L, 0, 1);
