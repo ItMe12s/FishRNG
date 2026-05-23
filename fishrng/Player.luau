@@ -2,7 +2,35 @@
 local geode = _G.geode
 local cocos = geode.cocos2d
 
+local GInfo = require("./GInfo")
+
 local Player = {}
+
+Player.FishingRodID = "Stick"
+Player.FishingRodSprite = nil
+
+function Player.refreshFishingRod(playerSprite)
+    if Player.FishingRodSprite then
+        local parent = Player.FishingRodSprite:getParent()
+        if parent then
+            parent:removeChild(Player.FishingRodSprite, true)
+        end
+        Player.FishingRodSprite = nil
+    end
+
+    local rodInfo = GInfo.FishingRodIDs[Player.FishingRodID]
+    if not rodInfo then return end
+
+    local rod = GInfo.FishingRodSpriteFromID(Player.FishingRodID)
+    if not rod then return end
+
+    rod:setAnchorPoint(0.5, 0)
+    rod:setPosition(rodInfo[2], rodInfo[3])
+    rod:setRotation(rodInfo[4])
+
+    playerSprite:addChild(rod, 1)
+    Player.FishingRodSprite = rod
+end
 
 function Player.create()
     local root = cocos.CCSprite.create()
@@ -24,6 +52,8 @@ function Player.create()
     end
     plr:setPosition(0, 20)
     root:addChild(plr, 0)
+
+    Player.refreshFishingRod(plr)
 
     return root
 end

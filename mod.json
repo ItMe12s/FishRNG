@@ -14,7 +14,9 @@
 	"resources": {
 		"spritesheets": {
 			"FishRNG": [
-				"resources/exported/*.png"
+				"resources/exported/*.png",
+				"resources/exported/fishes/*.png",
+				"resources/exported/fishingrods/*.png"
 			]
 		},
 		"files": [
