@@ -144,6 +144,13 @@ namespace luax {
         config->load               = load;
     }
 
+    namespace {
+        bool escapesRoot(std::filesystem::path const& rel) {
+            auto s = rel.generic_string();
+            return s == ".." || s.rfind("../", 0) == 0;
+        }
+    }
+
     luarequire_NavigateResult Requirer::resetTo(char const* requirer_chunkname) {
         if (!requirer_chunkname || requirer_chunkname[0] != '@') {
             return NAVIGATE_NOT_FOUND;
@@ -155,8 +162,7 @@ namespace luax {
         if (ec) return NAVIGATE_NOT_FOUND;
 
         auto rel = std::filesystem::relative(canonical, m_root, ec);
-        if (ec || rel.empty() || rel.native()[0] == '.') {
-            // Escapes resources root.
+        if (ec || rel.empty() || escapesRoot(rel)) {
             return NAVIGATE_NOT_FOUND;
         }
         m_current = canonical;
@@ -168,10 +174,7 @@ namespace luax {
         auto parent = m_current.parent_path();
         std::error_code ec;
         auto rel = std::filesystem::relative(parent, m_root, ec);
-        if (ec) return NAVIGATE_NOT_FOUND;
-        if (!rel.empty() && rel.native()[0] == '.') {
-            return NAVIGATE_NOT_FOUND;
-        }
+        if (ec || escapesRoot(rel)) return NAVIGATE_NOT_FOUND;
         m_current = parent;
         return NAVIGATE_SUCCESS;
     }
