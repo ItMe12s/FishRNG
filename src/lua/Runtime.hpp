@@ -30,6 +30,7 @@ namespace luax {
         lua_State* state();
         bool ready() const;
         bool runScript(std::string_view src, std::string_view chunkName, int deadlineMs = 250);
+        bool protectedCall(int nargs, int nresults, std::string_view context, int deadlineMs = 50);
         void runOnMain(std::function<void()> fn);
         void assertMainThread() const;
 

@@ -156,29 +156,43 @@ namespace luax {
             return false;
         }
 
-        // pcall expects the error handler to sit beneath the function on the stack.
-        lua_getref(m_state, m_tracebackRef);
-        lua_insert(m_state, -2);
-        int errfunc = lua_gettop(m_state) - 1;
-
-        m_scriptBudgetMs = deadlineMs;
-        m_scriptDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(deadlineMs);
-
         auto execStart = std::chrono::steady_clock::now();
-        int status = lua_pcall(m_state, 0, 0, errfunc);
+        bool ok = protectedCall(0, 0, chunk, deadlineMs);
         auto execMs = std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - execStart).count();
 
+        if (!ok) {
+            return false;
+        }
+
+        geode::log::debug("luau exec [{}] {}ms", chunk, execMs);
+        return true;
+    }
+
+    bool Runtime::protectedCall(int nargs, int nresults, std::string_view context, int deadlineMs) {
+        assertMainThread();
+
+        lua_getref(m_state, m_tracebackRef);
+        lua_insert(m_state, -nargs - 2);
+        int errfunc = lua_gettop(m_state) - nargs - 1;
+
+        m_scriptBudgetMs = deadlineMs;
+        if (deadlineMs > 0) {
+            m_scriptDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(deadlineMs);
+        }
+
+        int status = lua_pcall(m_state, nargs, nresults, errfunc);
+        m_scriptBudgetMs = 0;
         lua_remove(m_state, errfunc);
 
         if (status != 0) {
-            auto err = formatLuaError(chunk.c_str());
+            std::string ctx(context);
+            auto err = formatLuaError(ctx.c_str());
             geode::log::error("{}", err);
             lua_pop(m_state, 1);
             return false;
         }
 
-        geode::log::debug("luau exec [{}] {}ms", chunk, execMs);
         return true;
     }
 
