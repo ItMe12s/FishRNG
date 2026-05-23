@@ -134,6 +134,57 @@ namespace {
         return 1;
     }
 
+    template <class T>
+    int ccease_create(lua_State* L) {
+        assertMainThread();
+        auto action = Usertype<cocos2d::CCActionInterval>::check(L, 1, "CCActionEase:create");
+        Usertype<T>::pushOwned(L, T::create(requireActionInterval(action, "CCActionEase:create")));
+        return 1;
+    }
+
+    template <class T>
+    int cceaserate_create(lua_State* L) {
+        assertMainThread();
+        auto action = Usertype<cocos2d::CCActionInterval>::check(L, 1, "CCEaseRateAction:create");
+        float rate = check<float>(L, 2, "CCEaseRateAction:create");
+        Usertype<T>::pushOwned(L, T::create(requireActionInterval(action, "CCEaseRateAction:create"), rate));
+        return 1;
+    }
+
+    template <class T>
+    int cceaseelastic_create(lua_State* L) {
+        assertMainThread();
+        auto action = Usertype<cocos2d::CCActionInterval>::check(L, 1, "CCEaseElastic:create");
+        auto checked = requireActionInterval(action, "CCEaseElastic:create");
+        if (lua_gettop(L) >= 2) {
+            Usertype<T>::pushOwned(L, T::create(checked, check<float>(L, 2, "CCEaseElastic:create")));
+        } else {
+            Usertype<T>::pushOwned(L, T::create(checked));
+        }
+        return 1;
+    }
+
+    int cceaserateaction_getRate(lua_State* L) {
+        push(L, Usertype<cocos2d::CCEaseRateAction>::check(L, 1, "CCEaseRateAction:getRate")->getRate());
+        return 1;
+    }
+    int cceaserateaction_setRate(lua_State* L) {
+        auto self = Usertype<cocos2d::CCEaseRateAction>::check(L, 1, "CCEaseRateAction:setRate");
+        assertMainThread();
+        self->setRate(check<float>(L, 2, "CCEaseRateAction:setRate"));
+        return 0;
+    }
+    int cceaseelastic_getPeriod(lua_State* L) {
+        push(L, Usertype<cocos2d::CCEaseElastic>::check(L, 1, "CCEaseElastic:getPeriod")->getPeriod());
+        return 1;
+    }
+    int cceaseelastic_setPeriod(lua_State* L) {
+        auto self = Usertype<cocos2d::CCEaseElastic>::check(L, 1, "CCEaseElastic:setPeriod");
+        assertMainThread();
+        self->setPeriod(check<float>(L, 2, "CCEaseElastic:setPeriod"));
+        return 0;
+    }
+
     // Caller must leave the geode.cocos2d.actions table on top of the stack.
     void exposeFactoryTable(lua_State* L, char const* name, lua_CFunction createFn) {
         lua_createtable(L, 0, 1);
@@ -166,6 +217,32 @@ namespace {
         Usertype<cocos2d::CCDelayTime>::registerType(L, "CCDelayTime", { Usertype<cocos2d::CCActionInterval>::tag() });
         Usertype<cocos2d::CCSequence>::registerType(L, "CCSequence", { Usertype<cocos2d::CCActionInterval>::tag() });
         Usertype<cocos2d::CCRepeatForever>::registerType(L, "CCRepeatForever", { Usertype<cocos2d::CCActionInterval>::tag() });
+        Usertype<cocos2d::CCActionEase>::registerType(L, "CCActionEase", { Usertype<cocos2d::CCActionInterval>::tag() });
+        Usertype<cocos2d::CCEaseRateAction>::registerType(L, "CCEaseRateAction", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseRateAction>::method(L, "getRate", &cceaserateaction_getRate);
+        Usertype<cocos2d::CCEaseRateAction>::method(L, "setRate", &cceaserateaction_setRate);
+        Usertype<cocos2d::CCEaseIn>::registerType(L, "CCEaseIn", { Usertype<cocos2d::CCEaseRateAction>::tag() });
+        Usertype<cocos2d::CCEaseOut>::registerType(L, "CCEaseOut", { Usertype<cocos2d::CCEaseRateAction>::tag() });
+        Usertype<cocos2d::CCEaseInOut>::registerType(L, "CCEaseInOut", { Usertype<cocos2d::CCEaseRateAction>::tag() });
+        Usertype<cocos2d::CCEaseExponentialIn>::registerType(L, "CCEaseExponentialIn", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseExponentialOut>::registerType(L, "CCEaseExponentialOut", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseExponentialInOut>::registerType(L, "CCEaseExponentialInOut", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseSineIn>::registerType(L, "CCEaseSineIn", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseSineOut>::registerType(L, "CCEaseSineOut", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseSineInOut>::registerType(L, "CCEaseSineInOut", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseElastic>::registerType(L, "CCEaseElastic", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseElastic>::method(L, "getPeriod", &cceaseelastic_getPeriod);
+        Usertype<cocos2d::CCEaseElastic>::method(L, "setPeriod", &cceaseelastic_setPeriod);
+        Usertype<cocos2d::CCEaseElasticIn>::registerType(L, "CCEaseElasticIn", { Usertype<cocos2d::CCEaseElastic>::tag() });
+        Usertype<cocos2d::CCEaseElasticOut>::registerType(L, "CCEaseElasticOut", { Usertype<cocos2d::CCEaseElastic>::tag() });
+        Usertype<cocos2d::CCEaseElasticInOut>::registerType(L, "CCEaseElasticInOut", { Usertype<cocos2d::CCEaseElastic>::tag() });
+        Usertype<cocos2d::CCEaseBounce>::registerType(L, "CCEaseBounce", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseBounceIn>::registerType(L, "CCEaseBounceIn", { Usertype<cocos2d::CCEaseBounce>::tag() });
+        Usertype<cocos2d::CCEaseBounceOut>::registerType(L, "CCEaseBounceOut", { Usertype<cocos2d::CCEaseBounce>::tag() });
+        Usertype<cocos2d::CCEaseBounceInOut>::registerType(L, "CCEaseBounceInOut", { Usertype<cocos2d::CCEaseBounce>::tag() });
+        Usertype<cocos2d::CCEaseBackIn>::registerType(L, "CCEaseBackIn", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseBackOut>::registerType(L, "CCEaseBackOut", { Usertype<cocos2d::CCActionEase>::tag() });
+        Usertype<cocos2d::CCEaseBackInOut>::registerType(L, "CCEaseBackInOut", { Usertype<cocos2d::CCActionEase>::tag() });
 
         getOrCreateTable(L, "geode.cocos2d.actions");
         exposeFactoryTable(L, "CCMoveTo", &ccmoveto_create);
@@ -176,6 +253,28 @@ namespace {
         exposeFactoryTable(L, "CCDelayTime", &ccdelaytime_create);
         exposeFactoryTable(L, "CCSequence", &ccsequence_create);
         exposeFactoryTable(L, "CCRepeatForever", &ccrepeatforever_create);
+        exposeFactoryTable(L, "CCActionEase", &ccease_create<cocos2d::CCActionEase>);
+        exposeFactoryTable(L, "CCEaseRateAction", &cceaserate_create<cocos2d::CCEaseRateAction>);
+        exposeFactoryTable(L, "CCEaseIn", &cceaserate_create<cocos2d::CCEaseIn>);
+        exposeFactoryTable(L, "CCEaseOut", &cceaserate_create<cocos2d::CCEaseOut>);
+        exposeFactoryTable(L, "CCEaseInOut", &cceaserate_create<cocos2d::CCEaseInOut>);
+        exposeFactoryTable(L, "CCEaseExponentialIn", &ccease_create<cocos2d::CCEaseExponentialIn>);
+        exposeFactoryTable(L, "CCEaseExponentialOut", &ccease_create<cocos2d::CCEaseExponentialOut>);
+        exposeFactoryTable(L, "CCEaseExponentialInOut", &ccease_create<cocos2d::CCEaseExponentialInOut>);
+        exposeFactoryTable(L, "CCEaseSineIn", &ccease_create<cocos2d::CCEaseSineIn>);
+        exposeFactoryTable(L, "CCEaseSineOut", &ccease_create<cocos2d::CCEaseSineOut>);
+        exposeFactoryTable(L, "CCEaseSineInOut", &ccease_create<cocos2d::CCEaseSineInOut>);
+        exposeFactoryTable(L, "CCEaseElastic", &cceaseelastic_create<cocos2d::CCEaseElastic>);
+        exposeFactoryTable(L, "CCEaseElasticIn", &cceaseelastic_create<cocos2d::CCEaseElasticIn>);
+        exposeFactoryTable(L, "CCEaseElasticOut", &cceaseelastic_create<cocos2d::CCEaseElasticOut>);
+        exposeFactoryTable(L, "CCEaseElasticInOut", &cceaseelastic_create<cocos2d::CCEaseElasticInOut>);
+        exposeFactoryTable(L, "CCEaseBounce", &ccease_create<cocos2d::CCEaseBounce>);
+        exposeFactoryTable(L, "CCEaseBounceIn", &ccease_create<cocos2d::CCEaseBounceIn>);
+        exposeFactoryTable(L, "CCEaseBounceOut", &ccease_create<cocos2d::CCEaseBounceOut>);
+        exposeFactoryTable(L, "CCEaseBounceInOut", &ccease_create<cocos2d::CCEaseBounceInOut>);
+        exposeFactoryTable(L, "CCEaseBackIn", &ccease_create<cocos2d::CCEaseBackIn>);
+        exposeFactoryTable(L, "CCEaseBackOut", &ccease_create<cocos2d::CCEaseBackOut>);
+        exposeFactoryTable(L, "CCEaseBackInOut", &ccease_create<cocos2d::CCEaseBackInOut>);
         lua_pop(L, 1);
     }
 
