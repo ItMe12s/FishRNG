@@ -14,7 +14,7 @@
 	"resources": {
 		"files": [
 			"fishrng/*.luau",
-			"resources/*.png"
+			"resources/exported/*.png"
 		]
 	},
 	"dependencies": {
