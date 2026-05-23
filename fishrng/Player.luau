@@ -6,16 +6,16 @@ local Boats = require("./gi_Boats")
 local Player = {}
 
 Player.RodID = "Stick"
-Player.RodSprite = nil
+Player.RodSprite = nil :: CCSprite?
 Player.BoatID = "Wooden"
-Player.BoatSprite = nil
+Player.BoatSprite = nil :: CCSprite?
 
-function Player.getWaterWaveRotation()
+function Player.getWaterWaveRotation(): number
     local t = os.clock() * 0.2
     return math.noise(t) * 15
 end
 
-function Player.refreshRod(playerSprite)
+function Player.refreshRod(playerSprite: CCSprite): ()
     if Player.RodSprite then
         local parent = Player.RodSprite:getParent()
         if parent then
@@ -31,14 +31,14 @@ function Player.refreshRod(playerSprite)
     if not rod then return end
 
     rod:setAnchorPoint(0.5, 0)
-    rod:setPosition(rodInfo[2], rodInfo[3])
-    rod:setRotation(rodInfo[4])
+    rod:setPosition(rodInfo.offsetX, rodInfo.offsetY)
+    rod:setRotation(rodInfo.rotation)
 
     playerSprite:addChild(rod, 0)
     Player.RodSprite = rod
 end
 
-function Player.refreshBoat(rootSprite)
+function Player.refreshBoat(rootSprite: CCSprite): ()
     if Player.BoatSprite then
         local parent = Player.BoatSprite:getParent()
         if parent then
@@ -57,7 +57,7 @@ function Player.refreshBoat(rootSprite)
     Player.BoatSprite = boat
 end
 
-function Player.create()
+function Player.create(): CCSprite
     local rootSprite = cocos.CCSprite.create()
 
     Player.refreshBoat(rootSprite)

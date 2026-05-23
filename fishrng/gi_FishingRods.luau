@@ -1,27 +1,33 @@
 local cocos = geode.cocos2d
 
---[[
-id = {
-    texture,
-    x, y, rotation offsets,
-    description
+type FishingRodInfo = {
+    texture: string,
+    offsetX: number,
+    offsetY: number,
+    rotation: number,
+    description: string,
 }
-]]
-local FishingRods = {
+
+local rodData: { [string]: FishingRodInfo } = {
     ["Stick"] = {
-        "rodStick.png",
-        -15, 0, -45,
-        "Starter rod. Genuinely a stick."
+        texture = "rodStick.png",
+        offsetX = -15,
+        offsetY = 0,
+        rotation = -45,
+        description = "Starter rod. Genuinely a stick.",
     },
 }
 
-function FishingRods.getInfo(id: string)
-    return FishingRods[id]
+local FishingRods = {}
+
+function FishingRods.getInfo(id: string): FishingRodInfo?
+    return rodData[id]
 end
 
-function FishingRods.spriteFromID(id: string)
-    if not FishingRods[id] then return nil end
-    local sprite = cocos.CCSprite.createWithSpriteFrameName(geode.expandSpriteName(FishingRods[id][1]))
+function FishingRods.spriteFromID(id: string): CCSprite?
+    local info = rodData[id]
+    if not info then return nil end
+    local sprite = cocos.CCSprite.createWithSpriteFrameName(geode.expandSpriteName(info.texture))
     sprite:setAliasTexParameters()
     sprite:setScale(1)
     return sprite
