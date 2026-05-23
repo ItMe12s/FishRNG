@@ -8,8 +8,9 @@ function Player.create()
     local root = cocos.CCSprite.create()
 
     local boat = cocos.CCSprite.createWithSpriteFrameName(geode.expandSpriteName("playerBoat.png"))
-    boat:setScale(3)
-    root:addChild(boat)
+    boat:setAliasTexParameters()
+    boat:setScale(1.25)
+    root:addChild(boat, 1)
 
     local gm = geode.GameManager.get()
     local icon_id = gm:getPlayerFrame()
@@ -21,7 +22,8 @@ function Player.create()
     if gm:getPlayerGlow() then
         plr:setGlowOutline(gm:colorForIdx(gm:getPlayerGlowColor()))
     end
-    root:addChild(plr)
+    plr:setPosition(0, 20)
+    root:addChild(plr, 0)
 
     return root
 end

@@ -62,6 +62,14 @@ namespace {
         self->setDisplayFrame(requireSpriteFrame(frame, "CCSprite:setDisplayFrame"));
         return 0;
     }
+    int ccsprite_setAliasTexParameters(lua_State* L) {
+        auto self = Usertype<Sprite>::check(L, 1, "CCSprite:setAliasTexParameters");
+        assertMainThread();
+        if (auto texture = self->getTexture()) {
+            texture->setAliasTexParameters();
+        }
+        return 0;
+    }
 
     void bindCCSprite(lua_State* L) {
         Usertype<Sprite>::registerType(L, "CCSprite", { Usertype<cocos2d::CCNode>::tag() });
@@ -70,6 +78,7 @@ namespace {
         Usertype<Sprite>::method(L, "isFlipX",  &ccsprite_isFlipX);
         Usertype<Sprite>::method(L, "isFlipY",  &ccsprite_isFlipY);
         Usertype<Sprite>::method(L, "setDisplayFrame", &ccsprite_setDisplayFrame);
+        Usertype<Sprite>::method(L, "setAliasTexParameters", &ccsprite_setAliasTexParameters);
 
         getOrCreateTable(L, "geode.cocos2d");
         lua_createtable(L, 0, 3);
