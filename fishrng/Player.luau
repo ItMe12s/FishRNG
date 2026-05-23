@@ -10,7 +10,7 @@ Player.FishingRodID = "Stick"
 Player.FishingRodSprite = nil
 
 function Player.getWaterWaveRotation()
-    local t = os.clock() * 1e-6
+    local t = os.clock() * 0.2
     return math.noise(t) * 15
 end
 

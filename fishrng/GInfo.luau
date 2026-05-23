@@ -4,7 +4,12 @@ local cocos = geode.cocos2d
 
 local GInfo = {}
 
--- id -> { texture, x, y, rotation }
+--[[
+id = {
+    texture,
+    x, y, rotation
+}
+]]
 GInfo.FishingRodIDs = {
     ["Stick"] = {
         "rodStick.png",

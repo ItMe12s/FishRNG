@@ -27,6 +27,6 @@ PlayerBoat:runAction(actions.CCRepeatForever.create(bob))
 
 cocos.scheduler.schedule(function()
     PlayerBoat:setRotation(Player.getWaterWaveRotation())
-end, 0.05)
+end, 0.01)
 
 print("FishRNG bootstrap loaded")
