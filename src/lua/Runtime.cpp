@@ -19,6 +19,65 @@
 namespace luax {
     namespace {
         constexpr char const kTracebackName[] = "luax:traceback";
+
+        class StackGuard {
+        public:
+            explicit StackGuard(lua_State* L) : m_state(L), m_top(lua_gettop(L)) {}
+            ~StackGuard() {
+                if (m_active) {
+                    lua_settop(m_state, m_top);
+                }
+            }
+
+            StackGuard(StackGuard const&) = delete;
+            StackGuard& operator=(StackGuard const&) = delete;
+
+            void dismiss() { m_active = false; }
+
+        private:
+            lua_State* m_state = nullptr;
+            int m_top = 0;
+            bool m_active = true;
+        };
+
+        class ScriptBudgetGuard {
+        public:
+            ScriptBudgetGuard(
+                int& budget,
+                std::chrono::steady_clock::time_point& deadline,
+                int deadlineMs
+            ) : m_budget(budget),
+                m_deadline(deadline),
+                m_previousBudget(budget),
+                m_previousDeadline(deadline) {
+                m_budget = deadlineMs;
+                if (deadlineMs > 0) {
+                    m_deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(deadlineMs);
+                }
+            }
+
+            ~ScriptBudgetGuard() {
+                m_budget = m_previousBudget;
+                m_deadline = m_previousDeadline;
+            }
+
+            ScriptBudgetGuard(ScriptBudgetGuard const&) = delete;
+            ScriptBudgetGuard& operator=(ScriptBudgetGuard const&) = delete;
+
+        private:
+            int& m_budget;
+            std::chrono::steady_clock::time_point& m_deadline;
+            int m_previousBudget = 0;
+            std::chrono::steady_clock::time_point m_previousDeadline{};
+        };
+
+        std::string valueToString(lua_State* L, int idx) {
+            size_t len = 0;
+            char const* text = luaL_tolstring(L, idx, &len);
+            std::string out = text ? std::string(text, len) : std::string();
+            lua_pop(L, 1);
+            return out;
+        }
     }
 
     Runtime::Runtime() : m_ownerThread(std::this_thread::get_id()) {
@@ -31,6 +90,7 @@ namespace luax {
         luaL_openlibs(m_state);
 
         installTraceback();
+        installPrint();
 
         auto* cb = lua_callbacks(m_state);
         cb->interrupt = &Runtime::interruptCallback;
@@ -80,6 +140,25 @@ namespace luax {
         lua_pushcfunction(m_state, &Runtime::luaTraceback, kTracebackName);
         m_tracebackRef = lua_ref(m_state, -1);
         lua_pop(m_state, 1);
+    }
+
+    void Runtime::installPrint() {
+        lua_pushcfunction(m_state, &Runtime::luaPrint, "print");
+        lua_setglobal(m_state, "print");
+    }
+
+    int Runtime::luaPrint(lua_State* L) {
+        StackGuard stack(L);
+        int argc = lua_gettop(L);
+        std::string out;
+
+        for (int i = 1; i <= argc; ++i) {
+            if (i > 1) out.push_back('\t');
+            out.append(valueToString(L, i));
+        }
+
+        geode::log::info("[lua] {}", out);
+        return 0;
     }
 
     int Runtime::luaTraceback(lua_State* L) {
@@ -171,18 +250,19 @@ namespace luax {
 
     bool Runtime::protectedCall(int nargs, int nresults, std::string_view context, int deadlineMs) {
         assertMainThread();
+        int baseTop = lua_gettop(m_state) - nargs;
+        if (nargs < 0 || baseTop < 1 || !lua_isfunction(m_state, baseTop)) {
+            geode::log::error("[{}] luau protectedCall missing function", context);
+            return false;
+        }
 
         lua_getref(m_state, m_tracebackRef);
         lua_insert(m_state, -nargs - 2);
         int errfunc = lua_gettop(m_state) - nargs - 1;
 
-        m_scriptBudgetMs = deadlineMs;
-        if (deadlineMs > 0) {
-            m_scriptDeadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(deadlineMs);
-        }
+        ScriptBudgetGuard budget(m_scriptBudgetMs, m_scriptDeadline, deadlineMs);
 
         int status = lua_pcall(m_state, nargs, nresults, errfunc);
-        m_scriptBudgetMs = 0;
         lua_remove(m_state, errfunc);
 
         if (status != 0) {
@@ -210,7 +290,9 @@ namespace luax {
         auto* self = static_cast<Runtime*>(ud);
         if (nsize == 0) {
             if (ptr) {
-                if (self) self->m_memoryUsage -= osize;
+                if (self) {
+                    self->m_memoryUsage = osize > self->m_memoryUsage ? 0 : self->m_memoryUsage - osize;
+                }
                 std::free(ptr);
             }
             return nullptr;
@@ -225,7 +307,11 @@ namespace luax {
         void* out = std::realloc(ptr, nsize);
         if (!out) return nullptr;
         if (self) {
-            self->m_memoryUsage = self->m_memoryUsage + nsize - osize;
+            if (osize > self->m_memoryUsage) {
+                self->m_memoryUsage = nsize;
+            } else {
+                self->m_memoryUsage = self->m_memoryUsage - osize + nsize;
+            }
         }
         return out;
     }

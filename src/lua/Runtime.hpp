@@ -45,8 +45,10 @@ namespace luax {
         static void interruptCallback(lua_State* L, int gc);
         static void panicCallback(lua_State* L, int errcode);
         static int luaTraceback(lua_State* L);
+        static int luaPrint(lua_State* L);
 
         void installTraceback();
+        void installPrint();
         std::string formatLuaError(char const* chunk);
 
         lua_State* m_state = nullptr;

@@ -100,7 +100,10 @@ namespace luax::detail {
             luaL_error(L, "%s expected %s at arg %d", method, targetName, idx);
         }
         auto* block = static_cast<UserdataBlock*>(lua_touserdata(L, idx));
-        return block ? block->ptr : nullptr;
+        if (!block || !block->ptr) {
+            luaL_error(L, "%s expected live %s at arg %d", method, targetName, idx);
+        }
+        return block->ptr;
     }
 
     void pushUserdata(lua_State* L, cocos2d::CCObject* obj, TypeInfo const& info, bool owned) {

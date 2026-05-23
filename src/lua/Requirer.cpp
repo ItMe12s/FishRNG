@@ -34,6 +34,25 @@ namespace luax {
             return buffer.str();
         }
 
+        std::string normalizedPathString(std::filesystem::path const& path) {
+            auto out = path.string();
+            for (auto& c : out) {
+                if (c == '\\') c = '/';
+            }
+            return out;
+        }
+
+        bool escapesRoot(std::filesystem::path const& rel) {
+            auto s = rel.generic_string();
+            return rel.empty() || s == ".." || s.rfind("../", 0) == 0;
+        }
+
+        bool pathInsideRoot(std::filesystem::path const& path, std::filesystem::path const& root) {
+            std::error_code ec;
+            auto rel = std::filesystem::relative(path, root, ec);
+            return !ec && !escapesRoot(rel);
+        }
+
         Requirer* self(void* ctx) { return static_cast<Requirer*>(ctx); }
 
         bool is_require_allowed(lua_State*, void*, char const* requirer_chunkname) {
@@ -66,11 +85,11 @@ namespace luax {
         }
 
         luarequire_WriteResult get_loadname(lua_State*, void* ctx, char* buffer, size_t buffer_size, size_t* size_out) {
-            return writeString(self(ctx)->modulePath().string(), buffer, buffer_size, size_out);
+            return writeString(normalizedPathString(self(ctx)->modulePath()), buffer, buffer_size, size_out);
         }
 
         luarequire_WriteResult get_cache_key(lua_State*, void* ctx, char* buffer, size_t buffer_size, size_t* size_out) {
-            return writeString(self(ctx)->modulePath().string(), buffer, buffer_size, size_out);
+            return writeString(normalizedPathString(self(ctx)->modulePath()), buffer, buffer_size, size_out);
         }
 
         luarequire_ConfigStatus get_config_status(lua_State*, void*) {
@@ -109,13 +128,17 @@ namespace luax {
             int resumeStatus = lua_resume(ML, L, 0);
             if (resumeStatus == 0) {
                 if (lua_gettop(ML) != 1) {
+                    lua_pop(L, 1);
                     luaL_error(L, "module '%s' must return a single value", chunkname);
                 }
             } else if (resumeStatus == LUA_YIELD) {
+                lua_pop(L, 1);
                 luaL_error(L, "module '%s' yielded", chunkname);
             } else {
                 char const* err = lua_tostring(ML, -1);
-                luaL_error(L, "error running module '%s': %s", chunkname, err ? err : "(unknown)");
+                std::string msg = err ? err : "(unknown runtime error)";
+                lua_pop(L, 1);
+                luaL_error(L, "error running module '%s': %s", chunkname, msg.c_str());
             }
 
             lua_xmove(ML, L, 1);
@@ -144,13 +167,6 @@ namespace luax {
         config->load               = load;
     }
 
-    namespace {
-        bool escapesRoot(std::filesystem::path const& rel) {
-            auto s = rel.generic_string();
-            return s == ".." || s.rfind("../", 0) == 0;
-        }
-    }
-
     luarequire_NavigateResult Requirer::resetTo(char const* requirer_chunkname) {
         if (!requirer_chunkname || requirer_chunkname[0] != '@') {
             return NAVIGATE_NOT_FOUND;
@@ -161,8 +177,7 @@ namespace luax {
         auto canonical = std::filesystem::weakly_canonical(candidate, ec);
         if (ec) return NAVIGATE_NOT_FOUND;
 
-        auto rel = std::filesystem::relative(canonical, m_root, ec);
-        if (ec || rel.empty() || escapesRoot(rel)) {
+        if (!pathInsideRoot(canonical, m_root)) {
             return NAVIGATE_NOT_FOUND;
         }
         m_current = canonical;
@@ -172,9 +187,7 @@ namespace luax {
     luarequire_NavigateResult Requirer::toParent() {
         if (m_current == m_root) return NAVIGATE_NOT_FOUND;
         auto parent = m_current.parent_path();
-        std::error_code ec;
-        auto rel = std::filesystem::relative(parent, m_root, ec);
-        if (ec || escapesRoot(rel)) return NAVIGATE_NOT_FOUND;
+        if (!pathInsideRoot(parent, m_root)) return NAVIGATE_NOT_FOUND;
         m_current = parent;
         return NAVIGATE_SUCCESS;
     }
@@ -204,10 +217,7 @@ namespace luax {
     std::string Requirer::chunkname() const {
         std::error_code ec;
         auto rel = std::filesystem::relative(m_current, m_root, ec);
-        std::string name = ec ? m_current.string() : rel.string();
-        for (auto& c : name) {
-            if (c == '\\') c = '/';
-        }
+        std::string name = normalizedPathString(ec ? m_current : rel);
         return "@" + name + ".luau";
     }
 }

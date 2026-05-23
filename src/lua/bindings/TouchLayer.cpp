@@ -1,5 +1,6 @@
 #include "../Binding.hpp"
 #include "../Runtime.hpp"
+#include "internal/LuaRef.hpp"
 #include "internal/Ref.hpp"
 #include "internal/Stack.hpp"
 #include "internal/TableUtil.hpp"
@@ -15,6 +16,7 @@
 #include <algorithm>
 #include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -26,7 +28,11 @@ namespace {
         struct Target {
             int id = 0;
             geode::Ref<cocos2d::CCSprite> sprite = nullptr;
-            int callbackRef = 0;
+            LuaRef callback;
+        };
+
+        struct Claim {
+            int targetId = 0;
         };
 
         static LuaTouchLayer* create() {
@@ -53,6 +59,7 @@ namespace {
 
         void onExit() override {
             m_claimedTargets.clear();
+            m_claimedTouchPtrs.clear();
             CCLayer::onExit();
         }
 
@@ -70,29 +77,26 @@ namespace {
             auto found = findHitTarget(touch);
             if (!found) return false;
 
-            m_claimedTargets[touchId] = found->id;
+            Claim claim = { found->id };
+            m_claimedTargets[touchId] = claim;
+            m_claimedTouchPtrs[touch] = claim;
+            callTarget(*found, touch);
             return true;
         }
 
         void ccTouchEnded(cocos2d::CCTouch* touch, cocos2d::CCEvent*) override {
             auto touchId = touch->getID();
-            auto claimed = m_claimedTargets.find(touchId);
-            if (claimed == m_claimedTargets.end()) return;
-
-            auto found = findTargetById(claimed->second);
-            m_claimedTargets.erase(claimed);
-            if (!found || !targetContainsTouch(*found, touch)) return;
-
-            callTarget(*found, touch);
+            clearClaim(touchId, touch);
         }
 
         void ccTouchCancelled(cocos2d::CCTouch* touch, cocos2d::CCEvent*) override {
             m_claimedTargets.erase(touch->getID());
+            m_claimedTouchPtrs.erase(touch);
         }
 
-        int addTapTarget(cocos2d::CCSprite* sprite, int callbackRef) {
+        int addTapTarget(cocos2d::CCSprite* sprite, LuaRef callback) {
             auto id = m_nextTargetId++;
-            m_targets.push_back(std::make_unique<Target>(Target{ id, sprite, callbackRef }));
+            m_targets.push_back(std::make_unique<Target>(Target{ id, sprite, std::move(callback) }));
             return id;
         }
 
@@ -102,18 +106,15 @@ namespace {
             });
             if (it == m_targets.end()) return false;
 
-            unrefCallback((*it)->callbackRef);
             m_targets.erase(it);
             eraseClaimedTarget(id);
             return true;
         }
 
         void clearTapTargets() {
-            for (auto& target : m_targets) {
-                unrefCallback(target->callbackRef);
-            }
             m_targets.clear();
             m_claimedTargets.clear();
+            m_claimedTouchPtrs.clear();
         }
 
         void setManualTouchPriority(int priority) {
@@ -168,13 +169,6 @@ namespace {
             return nodeTreeContainsTouch(sprite, touch->getLocation());
         }
 
-        Target* findTargetById(int id) {
-            auto it = std::find_if(m_targets.begin(), m_targets.end(), [id](auto const& target) {
-                return target->id == id;
-            });
-            return it == m_targets.end() ? nullptr : it->get();
-        }
-
         Target* findHitTarget(cocos2d::CCTouch* touch) {
             for (auto it = m_targets.rbegin(); it != m_targets.rend(); ++it) {
                 if (targetContainsTouch(**it, touch)) return it->get();
@@ -187,7 +181,7 @@ namespace {
             if (!runtime.ready()) return;
 
             auto* L = runtime.state();
-            lua_getref(L, target.callbackRef);
+            if (!target.callback.push()) return;
             if (!lua_isfunction(L, -1)) {
                 lua_pop(L, 1);
                 return;
@@ -207,16 +201,43 @@ namespace {
             runtime.protectedCall(1, 0, "TouchLayer tap callback", 50);
         }
 
-        void unrefCallback(int ref) {
-            if (ref == 0) return;
-            auto& runtime = luax::Runtime::instance();
-            if (!runtime.ready()) return;
-            lua_unref(runtime.state(), ref);
-        }
-
         void eraseClaimedTarget(int id) {
             for (auto it = m_claimedTargets.begin(); it != m_claimedTargets.end();) {
-                if (it->second == id) {
+                if (it->second.targetId == id) {
+                    it = m_claimedTargets.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+
+            for (auto it = m_claimedTouchPtrs.begin(); it != m_claimedTouchPtrs.end();) {
+                if (it->second.targetId == id) {
+                    it = m_claimedTouchPtrs.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+        }
+
+        void clearClaim(int touchId, cocos2d::CCTouch* touch) {
+            auto byId = m_claimedTargets.find(touchId);
+            if (byId != m_claimedTargets.end()) {
+                m_claimedTargets.erase(byId);
+                m_claimedTouchPtrs.erase(touch);
+                return;
+            }
+
+            auto byPtr = m_claimedTouchPtrs.find(touch);
+            if (byPtr == m_claimedTouchPtrs.end()) return;
+
+            auto claim = byPtr->second;
+            m_claimedTouchPtrs.erase(byPtr);
+            eraseClaimedTouchId(claim.targetId);
+        }
+
+        void eraseClaimedTouchId(int targetId) {
+            for (auto it = m_claimedTargets.begin(); it != m_claimedTargets.end();) {
+                if (it->second.targetId == targetId) {
                     it = m_claimedTargets.erase(it);
                 } else {
                     ++it;
@@ -226,7 +247,8 @@ namespace {
 
         bool m_hasManualTouchPriority = false;
         int m_nextTargetId = 1;
-        std::unordered_map<int, int> m_claimedTargets;
+        std::unordered_map<int, Claim> m_claimedTargets;
+        std::unordered_map<cocos2d::CCTouch*, Claim> m_claimedTouchPtrs;
         std::vector<std::unique_ptr<Target>> m_targets;
     };
 
@@ -246,10 +268,7 @@ namespace {
             luaL_error(L, "TouchLayer:addTapTarget expected function at arg 3");
         }
 
-        lua_pushvalue(L, 3);
-        auto callbackRef = lua_ref(L, -1);
-        lua_pop(L, 1);
-        auto targetId = self->addTapTarget(sprite, callbackRef);
+        auto targetId = self->addTapTarget(sprite, LuaRef(L, 3));
         push(L, targetId);
         return 1;
     }
