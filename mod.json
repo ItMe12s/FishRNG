@@ -12,9 +12,13 @@
 	"developer": "imes",
 	"description": "Idle fishing game at your screen corner.",
 	"resources": {
+		"spritesheets": {
+			"FishRNG": [
+				"resources/exported/*.png"
+			]
+		},
 		"files": [
-			"fishrng/*.luau",
-			"resources/exported/*.png"
+			"fishrng/*.luau"
 		]
 	},
 	"dependencies": {
