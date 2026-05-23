@@ -7,6 +7,7 @@
 #include <chrono>
 #include <cstddef>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -14,6 +15,8 @@
 #include <unordered_map>
 
 namespace luax {
+    class Requirer;
+
     class Runtime final {
     public:
         Runtime();
@@ -29,6 +32,8 @@ namespace luax {
         bool runScript(std::string_view src, std::string_view chunkName, int deadlineMs = 250);
         void runOnMain(std::function<void()> fn);
         void assertMainThread() const;
+
+        std::string const& getOrCompileBytecode(std::string const& key, std::string const& source);
 
         std::size_t memoryUsage() const { return m_memoryUsage; }
         std::size_t memoryLimit() const { return m_memoryLimit; }
@@ -56,5 +61,7 @@ namespace luax {
         int m_tracebackRef = 0;
 
         std::unordered_map<std::string, std::string> m_bytecodeCache;
+
+        std::unique_ptr<Requirer> m_requirer;
     };
 }

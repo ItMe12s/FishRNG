@@ -1,9 +1,11 @@
 #include "Runtime.hpp"
 
 #include "Binding.hpp"
+#include "Requirer.hpp"
 
 #include <Geode/Geode.hpp>
 #include <Luau/Compiler.h>
+#include <Luau/Require.h>
 #include <lua.h>
 #include <lualib.h>
 
@@ -35,12 +37,15 @@ namespace luax {
         cb->panic = &Runtime::panicCallback;
         cb->userdata = this;
 
-        // Marks globals as safe so the VM can take fastcall paths for math, string, and the rest.
+        m_requirer = std::make_unique<Requirer>(*this);
+        luaopen_require(m_state, &Requirer::initConfig, m_requirer.get());
+
+        applyAllBindings(m_state);
+
+        // Mark globals as safe for fastcall, must be last.
         lua_pushvalue(m_state, LUA_GLOBALSINDEX);
         lua_setsafeenv(m_state, -1, true);
         lua_pop(m_state, 1);
-
-        applyAllBindings(m_state);
 
         m_ready.store(true, std::memory_order_release);
         geode::log::info("luau runtime ready");
@@ -119,30 +124,32 @@ namespace luax {
         return out;
     }
 
+    std::string const& Runtime::getOrCompileBytecode(std::string const& key, std::string const& source) {
+        auto cached = m_bytecodeCache.find(key);
+        if (cached != m_bytecodeCache.end()) {
+            return cached->second;
+        }
+
+        auto compileStart = std::chrono::steady_clock::now();
+        Luau::CompileOptions opts;
+        opts.optimizationLevel = 2;
+        opts.debugLevel = 1;
+        opts.typeInfoLevel = 1;
+        std::string compiled = Luau::compile(source, opts);
+        auto compileMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - compileStart).count();
+        auto inserted = m_bytecodeCache.emplace(key, std::move(compiled));
+        geode::log::debug("luau compile [{}] {}ms", key, compileMs);
+        return inserted.first->second;
+    }
+
     bool Runtime::runScript(std::string_view src, std::string_view chunkName, int deadlineMs) {
         assertMainThread();
 
         std::string chunk(chunkName);
-        std::string const* bytecode = nullptr;
+        std::string const& bytecode = getOrCompileBytecode(chunk, std::string(src));
 
-        auto cached = m_bytecodeCache.find(chunk);
-        if (cached == m_bytecodeCache.end()) {
-            auto compileStart = std::chrono::steady_clock::now();
-            Luau::CompileOptions opts;
-            opts.optimizationLevel = 2;
-            opts.debugLevel = 1;
-            opts.typeInfoLevel = 1;
-            std::string compiled = Luau::compile(std::string(src), opts);
-            auto compileMs = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - compileStart).count();
-            auto inserted = m_bytecodeCache.emplace(chunk, std::move(compiled));
-            bytecode = &inserted.first->second;
-            geode::log::debug("luau compile [{}] {}ms", chunk, compileMs);
-        } else {
-            bytecode = &cached->second;
-        }
-
-        if (luau_load(m_state, chunk.c_str(), bytecode->data(), bytecode->size(), 0) != 0) {
+        if (luau_load(m_state, chunk.c_str(), bytecode.data(), bytecode.size(), 0) != 0) {
             auto err = formatLuaError(chunk.c_str());
             geode::log::error("luau load failed {}", err);
             lua_pop(m_state, 1);

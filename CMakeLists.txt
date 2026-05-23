@@ -38,5 +38,5 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 setup_geode_mod(${PROJECT_NAME})
 
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
-target_link_libraries(${PROJECT_NAME} Luau.VM Luau.Compiler Luau.Ast)
+target_link_libraries(${PROJECT_NAME} Luau.VM Luau.Compiler Luau.Ast Luau.Require)
 target_compile_definitions(${PROJECT_NAME} PRIVATE FISHRNG_LUAU=1)

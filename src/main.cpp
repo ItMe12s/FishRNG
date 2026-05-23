@@ -16,7 +16,7 @@ $on_mod(Loaded) {
 
 namespace {
     std::string readBootstrapScript() {
-        auto path = Mod::get()->getResourcesDir() / "bootstrap.luau";
+        auto path = Mod::get()->getResourcesDir() / "Game.luau";
         std::ifstream file(path);
         std::ostringstream buffer;
         buffer << file.rdbuf();
@@ -27,7 +27,7 @@ namespace {
 class $modify(MenuLayer) {
     bool init() {
         if (!MenuLayer::init()) return false;
-        luax::Runtime::instance().runScript(readBootstrapScript(), "bootstrap.luau");
+        luax::Runtime::instance().runScript(readBootstrapScript(), "@Game.luau");
         return true;
     }
 };
