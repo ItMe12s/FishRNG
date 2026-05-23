@@ -31,8 +31,8 @@ set_target_properties(lua_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 FetchContent_Declare(
     sol2
-    GIT_REPOSITORY https://github.com/ThePhD/sol2.git
-    GIT_TAG        v3.3.0
+    GIT_REPOSITORY https://github.com/halx99/sol2.git
+    GIT_TAG        support-lua-5.5
 )
 set(SOL2_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(sol2)
