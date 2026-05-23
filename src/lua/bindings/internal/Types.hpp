@@ -39,4 +39,11 @@ namespace luax {
         lua_pushnumber(L, size.width);  lua_setfield(L, -2, "width");
         lua_pushnumber(L, size.height); lua_setfield(L, -2, "height");
     }
+
+    inline void pushColor3B(lua_State* L, cocos2d::ccColor3B const& color) {
+        lua_createtable(L, 0, 3);
+        lua_pushinteger(L, color.r); lua_setfield(L, -2, "r");
+        lua_pushinteger(L, color.g); lua_setfield(L, -2, "g");
+        lua_pushinteger(L, color.b); lua_setfield(L, -2, "b");
+    }
 }
