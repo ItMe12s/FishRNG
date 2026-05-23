@@ -22,6 +22,8 @@ local bob_down: CCActionInterval = actions.CCEaseSineInOut.create(actions.CCMove
 local bob: CCActionInterval = actions.CCSequence.create({ bob_up, bob_down })
 playerRoot:runAction(actions.CCRepeatForever.create(bob))
 
+Player.transitionIn(playerRoot)
+
 cocos.scheduler.schedule(function()
     playerRoot:setRotation(Player.getWaterWaveRotation())
 end, 0.01)

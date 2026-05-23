@@ -1,4 +1,5 @@
 local cocos = geode.cocos2d
+local actions = cocos.actions
 
 local FishingRods = require("./gi_FishingRods")
 local Boats = require("./gi_Boats")
@@ -78,6 +79,14 @@ function Player.create(): CCSprite
     Player.refreshRod(playerSprite)
 
     return rootSprite
+end
+
+function Player.transitionIn(rootSprite: CCSprite): ()
+    local action = actions.CCSequence.create({
+        actions.CCMoveBy.create(0, 100, 0),
+        actions.CCEaseElasticOut.create(actions.CCMoveBy.create(10, -100, 0)),
+    })
+    rootSprite:runAction(action)
 end
 
 return Player
