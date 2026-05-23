@@ -1,16 +1,26 @@
 #include "Binding.hpp"
 
 #include <Geode/Geode.hpp>
+#include <algorithm>
 #include <exception>
+#include <string_view>
 #include <vector>
 
 namespace fishrng::lua {
     namespace {
-        constexpr int ApiVersion = 1;
-
         std::vector<Binding>& bindings() {
             static std::vector<Binding> value;
             return value;
+        }
+
+        int bindingPriority(char const* name) {
+            using namespace std::string_view_literals;
+            auto value = std::string_view(name);
+            if (value == "CCObject"sv) return 0;
+            if (value == "CCNode"sv) return 1;
+            if (value == "CCAction"sv) return 2;
+            if (value == "CCSpriteFrame"sv) return 2;
+            return 10;
         }
     }
 
@@ -19,7 +29,12 @@ namespace fishrng::lua {
     }
 
     void applyAllBindings(sol::state& lua) {
-        for (auto const& binding : bindings()) {
+        auto ordered = bindings();
+        std::stable_sort(ordered.begin(), ordered.end(), [](auto const& left, auto const& right) {
+            return bindingPriority(left.name) < bindingPriority(right.name);
+        });
+
+        for (auto const& binding : ordered) {
             try {
                 binding.fn(lua);
             } catch (std::exception const& e) {
@@ -30,7 +45,4 @@ namespace fishrng::lua {
         }
     }
 
-    int bindingApiVersion() {
-        return ApiVersion;
-    }
 }

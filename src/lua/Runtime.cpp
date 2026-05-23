@@ -44,7 +44,7 @@ namespace fishrng::lua {
         m_state.set_panic(&luaPanic);
         m_state.set_exception_handler(&luaExceptionHandler);
 
-        // os, only time/date/clock/difftime
+        // Keep harmless time helpers, remove process and filesystem access below.
         m_state.open_libraries(
             sol::lib::base,
             sol::lib::package,
@@ -55,9 +55,7 @@ namespace fishrng::lua {
         );
         sandboxOs(m_state);
 
-        auto geode = m_state["geode"].get_or_create<sol::table>();
         applyAllBindings(m_state);
-        geode["__api_version"] = bindingApiVersion();
 
         m_ready = true;
         geode::log::info("sol2 lua runtime ready {}", LUA_RELEASE);

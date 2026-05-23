@@ -8,7 +8,7 @@
 #include <thread>
 
 namespace fishrng::lua {
-    // Owns a Lua state, main thread only, debug checks thread.
+    // Runtime state is owned by the thread that constructs it. Cocos bindings assert this owner thread before mutation.
     class Runtime final {
     public:
         Runtime();
@@ -23,10 +23,9 @@ namespace fishrng::lua {
         bool ready() const;
         bool runScript(std::string_view src, std::string_view chunkName);
         void runOnMain(std::function<void()> fn);
-
-    private:
         void assertMainThread() const;
 
+    private:
         sol::state m_state;
         std::thread::id m_ownerThread;
         bool m_ready = false;

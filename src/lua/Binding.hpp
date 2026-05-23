@@ -12,10 +12,9 @@ namespace fishrng::lua {
 
     void registerBinding(Binding const& binding);
     void applyAllBindings(sol::state& lua);
-    int bindingApiVersion();
 }
 
-// Cocos2d nodes are ref-counted. Raw pointers in Lua are non-owning unless wrapped.
+// Borrowed Cocos pointers stay non-owning. Factories return Lua-owned refs from bindings/internal/Ref.hpp.
 #define FISHRNG_LUA_BINDING(NAME, FN)                          \
     namespace {                                                \
         struct AutoReg_##NAME {                                \
