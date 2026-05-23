@@ -4,6 +4,7 @@
 #include "Requirer.hpp"
 
 #include <Geode/Geode.hpp>
+#include <Luau/CodeGen.h>
 #include <Luau/Compiler.h>
 #include <Luau/Require.h>
 #include <lua.h>
@@ -88,6 +89,14 @@ namespace luax {
         }
 
         luaL_openlibs(m_state);
+
+        if (Luau::CodeGen::isSupported()) {
+            Luau::CodeGen::create(m_state);
+            m_codegenEnabled = true;
+            geode::log::info("luau codegen enabled");
+        } else {
+            geode::log::info("luau codegen not supported on this platform, using interpreter");
+        }
 
         installTraceback();
         installPrint();
@@ -243,6 +252,13 @@ namespace luax {
             geode::log::error("luau load failed {}", err);
             lua_pop(m_state, 1);
             return false;
+        }
+
+        if (m_codegenEnabled) {
+            auto cgResult = Luau::CodeGen::compile(m_state, -1, Luau::CodeGen::CodeGen_ColdFunctions);
+            if (cgResult.hasErrors()) {
+                geode::log::warn("luau codegen [{}] partial: {}", chunk, Luau::CodeGen::toString(cgResult.result));
+            }
         }
 
         auto execStart = std::chrono::steady_clock::now();

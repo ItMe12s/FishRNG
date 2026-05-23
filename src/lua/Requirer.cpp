@@ -3,6 +3,7 @@
 #include "Runtime.hpp"
 
 #include <Geode/Geode.hpp>
+#include <Luau/CodeGen.h>
 #include <Luau/Compiler.h>
 #include <lualib.h>
 
@@ -123,6 +124,10 @@ namespace luax {
                 std::string msg = err ? err : "(unknown load error)";
                 lua_pop(L, 1);
                 luaL_error(L, "module '%s' failed to load: %s", chunkname, msg.c_str());
+            }
+
+            if (req->runtime().codegenEnabled()) {
+                Luau::CodeGen::compile(ML, -1, Luau::CodeGen::CodeGen_ColdFunctions);
             }
 
             int resumeStatus = lua_resume(ML, L, 0);

@@ -44,6 +44,8 @@ namespace luax {
         std::size_t memoryLimit() const { return m_memoryLimit; }
         void setMemoryLimit(std::size_t bytes) { m_memoryLimit = bytes; }
 
+        bool codegenEnabled() const { return m_codegenEnabled; }
+
     private:
         static void* boundedAlloc(void* ud, void* ptr, size_t osize, size_t nsize);
         static void interruptCallback(lua_State* L, int gc);
@@ -66,6 +68,8 @@ namespace luax {
         std::size_t m_memoryLimit = 64 * 1024 * 1024;
 
         int m_tracebackRef = 0;
+
+        bool m_codegenEnabled = false;
 
         std::unordered_map<std::string, std::string> m_bytecodeCache;
 
