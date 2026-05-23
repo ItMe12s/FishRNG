@@ -1,30 +1,33 @@
 local cocos = geode.cocos2d
 
-local GInfo = require("./GInfo")
+local FishingRods = require("./gi_FishingRods")
+local Boats = require("./gi_Boats")
 
 local Player = {}
 
-Player.FishingRodID = "Stick"
-Player.FishingRodSprite = nil
+Player.RodID = "Stick"
+Player.RodSprite = nil
+Player.BoatID = "Wooden"
+Player.BoatSprite = nil
 
 function Player.getWaterWaveRotation()
     local t = os.clock() * 0.2
     return math.noise(t) * 15
 end
 
-function Player.refreshFishingRod(playerSprite)
-    if Player.FishingRodSprite then
-        local parent = Player.FishingRodSprite:getParent()
+function Player.refreshRod(playerSprite)
+    if Player.RodSprite then
+        local parent = Player.RodSprite:getParent()
         if parent then
-            parent:removeChild(Player.FishingRodSprite, true)
+            parent:removeChild(Player.RodSprite, true)
         end
-        Player.FishingRodSprite = nil
+        Player.RodSprite = nil
     end
 
-    local rodInfo = GInfo.FishingRodIDs[Player.FishingRodID]
+    local rodInfo = FishingRods.getInfo(Player.RodID)
     if not rodInfo then return end
 
-    local rod = GInfo.FishingRodSpriteFromID(Player.FishingRodID)
+    local rod = FishingRods.spriteFromID(Player.RodID)
     if not rod then return end
 
     rod:setAnchorPoint(0.5, 0)
@@ -32,33 +35,49 @@ function Player.refreshFishingRod(playerSprite)
     rod:setRotation(rodInfo[4])
 
     playerSprite:addChild(rod, 0)
-    Player.FishingRodSprite = rod
+    Player.RodSprite = rod
+end
+
+function Player.refreshBoat(rootSprite)
+    if Player.BoatSprite then
+        local parent = Player.BoatSprite:getParent()
+        if parent then
+            parent:removeChild(Player.BoatSprite, true)
+        end
+        Player.BoatSprite = nil
+    end
+
+    local boatInfo = Boats.getInfo(Player.BoatID)
+    if not boatInfo then return end
+
+    local boat = Boats.spriteFromID(Player.BoatID)
+    if not boat then return end
+
+    rootSprite:addChild(boat, 1)
+    Player.BoatSprite = boat
 end
 
 function Player.create()
-    local root = cocos.CCSprite.create()
+    local rootSprite = cocos.CCSprite.create()
 
-    local boat = cocos.CCSprite.createWithSpriteFrameName(geode.expandSpriteName("playerBoat.png"))
-    boat:setAliasTexParameters()
-    boat:setScale(1.25)
-    root:addChild(boat, 1)
+    Player.refreshBoat(rootSprite)
 
     local gm = geode.GameManager.get()
     local icon_id = gm:getPlayerFrame()
 
-    local plr = geode.SimplePlayer.create(icon_id)
-    plr:updatePlayerFrame(icon_id, geode.IconType.Cube)
-    plr:setColor(gm:colorForIdx(gm:getPlayerColor()))
-    plr:setSecondColor(gm:colorForIdx(gm:getPlayerColor2()))
+    local playerSprite = geode.SimplePlayer.create(icon_id)
+    playerSprite:updatePlayerFrame(icon_id, geode.IconType.Cube)
+    playerSprite:setColor(gm:colorForIdx(gm:getPlayerColor()))
+    playerSprite:setSecondColor(gm:colorForIdx(gm:getPlayerColor2()))
     if gm:getPlayerGlow() then
-        plr:setGlowOutline(gm:colorForIdx(gm:getPlayerGlowColor()))
+        playerSprite:setGlowOutline(gm:colorForIdx(gm:getPlayerGlowColor()))
     end
-    plr:setPosition(0, 20)
-    root:addChild(plr, 0)
+    playerSprite:setPosition(0, 20)
+    rootSprite:addChild(playerSprite, 0)
 
-    Player.refreshFishingRod(plr)
+    Player.refreshRod(playerSprite)
 
-    return root
+    return rootSprite
 end
 
 return Player

@@ -7,22 +7,22 @@ local overlay = geode.OverlayManager.get()
 local director = cocos.CCDirector.sharedDirector()
 local win_size = director:getWinSize()
 
-local PlayerBoat = Player.create()
+local playerRoot = Player.create()
 local layer = geode.TouchLayer.create()
 
-layer:addChild(PlayerBoat)
+layer:addChild(playerRoot)
 overlay:addChild(layer)
-layer:addTapTarget(PlayerBoat, function(tap)
+layer:addTapTarget(playerRoot, function(tap)
     -- print(("tapped at %.1f %.1f"):format(tap.x, tap.y))
 end)
 
-PlayerBoat:setPosition(win_size.width - 50, 0)
+playerRoot:setPosition(win_size.width - 50, 0)
 
 local bob_up = actions.CCEaseSineInOut.create(actions.CCMoveBy.create(2, 0, 3))
 local bob_down = actions.CCEaseSineInOut.create(actions.CCMoveBy.create(2, 0, -3))
 local bob = actions.CCSequence.create({ bob_up, bob_down })
-PlayerBoat:runAction(actions.CCRepeatForever.create(bob))
+playerRoot:runAction(actions.CCRepeatForever.create(bob))
 
 cocos.scheduler.schedule(function()
-    PlayerBoat:setRotation(Player.getWaterWaveRotation())
+    playerRoot:setRotation(Player.getWaterWaveRotation())
 end, 0.01)
