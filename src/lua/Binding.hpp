@@ -1,25 +1,27 @@
 #pragma once
 
-#include <sol/sol.hpp>
+#include <lua.h>
 
-namespace fishrng::lua {
-    using Registrar = void(*)(sol::state&);
+namespace luax {
+    using Registrar = void(*)(lua_State*);
 
     struct Binding {
         char const* name;
         Registrar fn;
+        int priority;
     };
 
     void registerBinding(Binding const& binding);
-    void applyAllBindings(sol::state& lua);
+    void applyAllBindings(lua_State* L);
 }
 
-// Borrowed Cocos pointers stay non-owning. Factories return Lua-owned refs from bindings/internal/Ref.hpp.
-#define FISHRNG_LUA_BINDING(NAME, FN)                          \
-    namespace {                                                \
-        struct AutoReg_##NAME {                                \
-            AutoReg_##NAME() {                                 \
-                ::fishrng::lua::registerBinding({#NAME, &FN}); \
-            }                                                  \
-        } _autoreg_##NAME;                                     \
+#define LUAX_BINDING_PRIORITY(NAME, FN, PRIO)               \
+    namespace {                                             \
+        struct AutoReg_##NAME {                             \
+            AutoReg_##NAME() {                              \
+                ::luax::registerBinding({#NAME, &FN, PRIO}); \
+            }                                               \
+        } _autoreg_##NAME;                                  \
     }
+
+#define LUAX_BINDING(NAME, FN) LUAX_BINDING_PRIORITY(NAME, FN, 10)

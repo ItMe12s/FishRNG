@@ -12,30 +12,17 @@ project(FishRNG VERSION 1.0.0)
 
 include(FetchContent)
 
-FetchContent_Declare(
-    lua
-    GIT_REPOSITORY https://github.com/lua/lua.git
-    GIT_TAG        v5.5.0
-)
-FetchContent_MakeAvailable(lua)
-
-file(GLOB LUA_SOURCES "${lua_SOURCE_DIR}/*.c")
-list(REMOVE_ITEM LUA_SOURCES
-    "${lua_SOURCE_DIR}/lua.c"
-    "${lua_SOURCE_DIR}/luac.c"
-    "${lua_SOURCE_DIR}/onelua.c"
-)
-add_library(lua_static STATIC ${LUA_SOURCES})
-target_include_directories(lua_static PUBLIC "${lua_SOURCE_DIR}")
-set_target_properties(lua_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set(LUAU_BUILD_CLI   OFF CACHE BOOL "" FORCE)
+set(LUAU_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(LUAU_BUILD_WEB   OFF CACHE BOOL "" FORCE)
+set(LUAU_EXTERN_C    OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
-    sol2
-    GIT_REPOSITORY https://github.com/halx99/sol2.git
-    GIT_TAG        support-lua-5.5
+    luau
+    GIT_REPOSITORY https://github.com/luau-lang/luau.git
+    GIT_TAG        0.722
 )
-set(SOL2_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(sol2)
+FetchContent_MakeAvailable(luau)
 
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
@@ -50,5 +37,6 @@ add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
 setup_geode_mod(${PROJECT_NAME})
 
-target_link_libraries(${PROJECT_NAME} sol2::sol2 lua_static)
-target_compile_definitions(${PROJECT_NAME} PRIVATE SOL_ALL_SAFETIES_ON=1)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
+target_link_libraries(${PROJECT_NAME} Luau.VM Luau.Compiler Luau.Ast)
+target_compile_definitions(${PROJECT_NAME} PRIVATE FISHRNG_LUAU=1)

@@ -1,14 +1,19 @@
 #pragma once
 
-#include <sol/sol.hpp>
+#include <lua.h>
+#include <lualib.h>
 
+#include <atomic>
+#include <chrono>
+#include <cstddef>
 #include <functional>
 #include <optional>
+#include <string>
 #include <string_view>
 #include <thread>
+#include <unordered_map>
 
-namespace fishrng::lua {
-    // Runtime state is owned by the thread that constructs it. Cocos bindings assert this owner thread before mutation.
+namespace luax {
     class Runtime final {
     public:
         Runtime();
@@ -19,15 +24,37 @@ namespace fishrng::lua {
 
         static Runtime& instance();
 
-        sol::state& state();
+        lua_State* state();
         bool ready() const;
-        bool runScript(std::string_view src, std::string_view chunkName);
+        bool runScript(std::string_view src, std::string_view chunkName, int deadlineMs = 250);
         void runOnMain(std::function<void()> fn);
         void assertMainThread() const;
 
+        std::size_t memoryUsage() const { return m_memoryUsage; }
+        std::size_t memoryLimit() const { return m_memoryLimit; }
+        void setMemoryLimit(std::size_t bytes) { m_memoryLimit = bytes; }
+
     private:
-        sol::state m_state;
+        static void* boundedAlloc(void* ud, void* ptr, size_t osize, size_t nsize);
+        static void interruptCallback(lua_State* L, int gc);
+        static void panicCallback(lua_State* L, int errcode);
+        static int luaTraceback(lua_State* L);
+
+        void installTraceback();
+        std::string formatLuaError(char const* chunk);
+
+        lua_State* m_state = nullptr;
         std::thread::id m_ownerThread;
-        bool m_ready = false;
+        std::atomic<bool> m_ready{false};
+
+        std::chrono::steady_clock::time_point m_scriptDeadline{};
+        int m_scriptBudgetMs = 0;
+
+        std::size_t m_memoryUsage = 0;
+        std::size_t m_memoryLimit = 64 * 1024 * 1024;
+
+        int m_tracebackRef = 0;
+
+        std::unordered_map<std::string, std::string> m_bytecodeCache;
     };
 }

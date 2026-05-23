@@ -1,38 +1,64 @@
 #include "../Binding.hpp"
 #include "internal/Ref.hpp"
+#include "internal/Stack.hpp"
+#include "internal/TableUtil.hpp"
 #include "internal/Types.hpp"
+#include "internal/Usertype.hpp"
 
 #include <Geode/Geode.hpp>
 #include <cocos2d.h>
+#include <lua.h>
 #include <string>
 
 namespace {
-    using namespace fishrng::lua::bindings;
+    using namespace luax;
+    using Label = cocos2d::CCLabelBMFont;
 
-    void bindCCLabelBMFont(sol::state& lua) {
-        auto geode = lua["geode"].get_or_create<sol::table>();
-        auto cocos = geode["cocos2d"].get_or_create<sol::table>();
-
-        cocos.new_usertype<cocos2d::CCLabelBMFont>("CCLabelBMFont",
-            sol::no_constructor,
-            "create", [](std::string const& text, std::string const& fontFile) {
-                assertMainThread();
-                return pushRef(cocos2d::CCLabelBMFont::create(text.c_str(), fontFile.c_str()), "CCLabelBMFont:create");
-            },
-            "setString", [](cocos2d::CCLabelBMFont& self, std::string const& text) {
-                assertMainThread();
-                self.setString(text.c_str());
-            },
-            "getString", [](cocos2d::CCLabelBMFont& self) {
-                return std::string(self.getString());
-            },
-            "setColor", [](cocos2d::CCLabelBMFont& self, sol::table color) {
-                assertMainThread();
-                self.setColor(toColor3B(color, "CCLabelBMFont:setColor"));
-            },
-            sol::base_classes, sol::bases<cocos2d::CCNode, cocos2d::CCObject>()
-        );
+    int label_create(lua_State* L) {
+        assertMainThread();
+        auto text = check<std::string>(L, 1, "CCLabelBMFont:create");
+        auto font = check<std::string>(L, 2, "CCLabelBMFont:create");
+        Usertype<Label>::pushOwned(L, Label::create(text.c_str(), font.c_str()));
+        return 1;
     }
 
-    FISHRNG_LUA_BINDING(CCLabelBMFont, bindCCLabelBMFont)
+    int label_setString(lua_State* L) {
+        auto self = Usertype<Label>::check(L, 1, "CCLabelBMFont:setString");
+        auto text = check<std::string>(L, 2, "CCLabelBMFont:setString");
+        assertMainThread();
+        self->setString(text.c_str());
+        return 0;
+    }
+
+    int label_getString(lua_State* L) {
+        auto self = Usertype<Label>::check(L, 1, "CCLabelBMFont:getString");
+        push(L, std::string(self->getString()));
+        return 1;
+    }
+
+    int label_setColor(lua_State* L) {
+        auto self = Usertype<Label>::check(L, 1, "CCLabelBMFont:setColor");
+        assertMainThread();
+        if (lua_type(L, 2) != LUA_TTABLE) {
+            luaL_error(L, "CCLabelBMFont:setColor expected color table");
+        }
+        self->setColor(toColor3B(L, 2, "CCLabelBMFont:setColor"));
+        return 0;
+    }
+
+    void bindCCLabelBMFont(lua_State* L) {
+        Usertype<Label>::registerType(L, "CCLabelBMFont", { Usertype<cocos2d::CCNode>::tag() });
+        Usertype<Label>::method(L, "setString", &label_setString);
+        Usertype<Label>::method(L, "getString", &label_getString);
+        Usertype<Label>::method(L, "setColor",  &label_setColor);
+
+        getOrCreateTable(L, "geode.cocos2d");
+        lua_createtable(L, 0, 1);
+        lua_pushcfunction(L, &label_create, "CCLabelBMFont.create");
+        lua_setfield(L, -2, "create");
+        lua_setfield(L, -2, "CCLabelBMFont");
+        lua_pop(L, 1);
+    }
+
+    LUAX_BINDING(CCLabelBMFont, bindCCLabelBMFont)
 }

@@ -1,18 +1,22 @@
 #include "../Binding.hpp"
+#include "internal/TableUtil.hpp"
+#include "internal/Usertype.hpp"
 
 #include <Geode/Geode.hpp>
 #include <cocos2d.h>
+#include <lua.h>
 
 namespace {
-    void bindCCSpriteFrame(sol::state& lua) {
-        auto geode = lua["geode"].get_or_create<sol::table>();
-        auto cocos = geode["cocos2d"].get_or_create<sol::table>();
+    using namespace luax;
 
-        cocos.new_usertype<cocos2d::CCSpriteFrame>("CCSpriteFrame",
-            sol::no_constructor,
-            sol::base_classes, sol::bases<cocos2d::CCObject>()
-        );
+    void bindCCSpriteFrame(lua_State* L) {
+        Usertype<cocos2d::CCSpriteFrame>::registerType(L, "CCSpriteFrame", { Usertype<cocos2d::CCObject>::tag() });
+
+        getOrCreateTable(L, "geode.cocos2d");
+        lua_createtable(L, 0, 0);
+        lua_setfield(L, -2, "CCSpriteFrame");
+        lua_pop(L, 1);
     }
 
-    FISHRNG_LUA_BINDING(CCSpriteFrame, bindCCSpriteFrame)
+    LUAX_BINDING_PRIORITY(CCSpriteFrame, bindCCSpriteFrame, 2)
 }

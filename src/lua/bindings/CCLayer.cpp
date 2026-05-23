@@ -1,25 +1,33 @@
 #include "../Binding.hpp"
 #include "internal/Ref.hpp"
+#include "internal/Stack.hpp"
+#include "internal/TableUtil.hpp"
+#include "internal/Usertype.hpp"
 
 #include <Geode/Geode.hpp>
 #include <cocos2d.h>
+#include <lua.h>
 
 namespace {
-    using namespace fishrng::lua::bindings;
+    using namespace luax;
+    using Layer = cocos2d::CCLayer;
 
-    void bindCCLayer(sol::state& lua) {
-        auto geode = lua["geode"].get_or_create<sol::table>();
-        auto cocos = geode["cocos2d"].get_or_create<sol::table>();
-
-        cocos.new_usertype<cocos2d::CCLayer>("CCLayer",
-            sol::no_constructor,
-            "create", []() {
-                assertMainThread();
-                return pushRef(cocos2d::CCLayer::create(), "CCLayer:create");
-            },
-            sol::base_classes, sol::bases<cocos2d::CCNode, cocos2d::CCObject>()
-        );
+    int cclayer_create(lua_State* L) {
+        assertMainThread();
+        Usertype<Layer>::pushOwned(L, Layer::create());
+        return 1;
     }
 
-    FISHRNG_LUA_BINDING(CCLayer, bindCCLayer)
+    void bindCCLayer(lua_State* L) {
+        Usertype<Layer>::registerType(L, "CCLayer", { Usertype<cocos2d::CCNode>::tag() });
+
+        getOrCreateTable(L, "geode.cocos2d");
+        lua_createtable(L, 0, 1);
+        lua_pushcfunction(L, &cclayer_create, "CCLayer.create");
+        lua_setfield(L, -2, "create");
+        lua_setfield(L, -2, "CCLayer");
+        lua_pop(L, 1);
+    }
+
+    LUAX_BINDING(CCLayer, bindCCLayer)
 }

@@ -13,7 +13,7 @@
 	"description": "Idle fishing game at your screen corner.",
 	"resources": {
 		"files": [
-			"fishrng/*.lua",
+			"fishrng/*.luau",
 			"resources/*.png"
 		]
 	},

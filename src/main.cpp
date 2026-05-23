@@ -11,12 +11,12 @@
 using namespace geode::prelude;
 
 $on_mod(Loaded) {
-    fishrng::lua::Runtime::instance();
+    luax::Runtime::instance();
 }
 
 namespace {
     std::string readBootstrapScript() {
-        auto path = Mod::get()->getResourcesDir() / "bootstrap.lua";
+        auto path = Mod::get()->getResourcesDir() / "bootstrap.luau";
         std::ifstream file(path);
         std::ostringstream buffer;
         buffer << file.rdbuf();
@@ -27,7 +27,7 @@ namespace {
 class $modify(MenuLayer) {
     bool init() {
         if (!MenuLayer::init()) return false;
-        fishrng::lua::Runtime::instance().runScript(readBootstrapScript(), "bootstrap.lua");
+        luax::Runtime::instance().runScript(readBootstrapScript(), "bootstrap.luau");
         return true;
     }
 };

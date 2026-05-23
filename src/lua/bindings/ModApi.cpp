@@ -1,16 +1,26 @@
 #include "../Binding.hpp"
+#include "internal/Stack.hpp"
+#include "internal/TableUtil.hpp"
 
 #include <Geode/Geode.hpp>
 #include <Geode/loader/Mod.hpp>
+#include <lua.h>
 #include <string>
 
 namespace {
-    void bindModApi(sol::state& lua) {
-        auto geode = lua["geode"].get_or_create<sol::table>();
-        geode["modResourcesPath"] = []() {
-            return geode::Mod::get()->getResourcesDir().string();
-        };
+    using namespace luax;
+
+    int modResourcesPath(lua_State* L) {
+        push(L, geode::Mod::get()->getResourcesDir().string());
+        return 1;
     }
 
-    FISHRNG_LUA_BINDING(ModApi, bindModApi)
+    void bindModApi(lua_State* L) {
+        getOrCreateTable(L, "geode");
+        lua_pushcfunction(L, &modResourcesPath, "modResourcesPath");
+        lua_setfield(L, -2, "modResourcesPath");
+        lua_pop(L, 1);
+    }
+
+    LUAX_BINDING(ModApi, bindModApi)
 }
