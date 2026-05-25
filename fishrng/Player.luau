@@ -66,22 +66,31 @@ function Player.create(): CCSprite?
 
 	Player.refreshBoat(rootSprite)
 
-	local gm = gd.GameManager.get() :: any
+	local gm = gd.GameManager.get()
 	if not gm then
 		return rootSprite
 	end
 
-	local icon_id: number = gm:getPlayerFrame()
+	local icon_id = gm:getIntGameVariable("playerFrame")
+	if icon_id <= 0 then
+		icon_id = 1
+	end
 
 	local playerSprite = gd.SimplePlayer.create(icon_id)
 	if not playerSprite then
 		return rootSprite
 	end
 
-	playerSprite:setColor(gm:colorForIdx(gm:getPlayerColor()))
-	playerSprite:setSecondColor(gm:colorForIdx(gm:getPlayerColor2()))
-	if gm:getPlayerGlow() then
-		playerSprite:enableCustomGlowColor(gm:colorForIdx(gm:getPlayerGlowColor()))
+	local color1 = gm:getIntGameVariable("playerColor")
+	local color2 = gm:getIntGameVariable("playerColor2")
+	playerSprite:setColor(gm:colorForIdx(color1))
+	playerSprite:setSecondColor(gm:colorForIdx(color2))
+	if gm:getGameVariable("playerGlow") then
+		local glowColor = gm:getIntGameVariable("playerColor3")
+		if glowColor < 0 then
+			glowColor = color2
+		end
+		playerSprite:enableCustomGlowColor(gm:colorForIdx(glowColor))
 	end
 	playerSprite:setPosition({ x = 0, y = 20 })
 	rootSprite:addChild(playerSprite, 0)
