@@ -1,38 +1,34 @@
 #include <Geode/Geode.hpp>
-#include <Geode/loader/Mod.hpp>
-#include <Geode/modify/MenuLayer.hpp>
-
-#include "lua/Runtime.hpp"
-
-#include <fstream>
-#include <sstream>
-#include <string>
+#include <Geode/loader/ModEvent.hpp>
+#include <imes.luauapi/include/LuauAPI.hpp>
 
 using namespace geode::prelude;
+namespace lua = imes::luauapi;
+
+static void loadBootstrap() {
+    if (lua::status() != lua::RuntimeStatus::Ready) {
+        log::error("LuauAPI not ready (status {})", static_cast<int>(lua::status()));
+        return;
+    }
+
+    auto result = lua::runFile(
+        Mod::get()->getResourcesDir(),
+        "Bootstrap.luau",
+        250
+    );
+    if (result.isErr()) {
+        log::error("Bootstrap.luau failed: {}", result.unwrapErr());
+        log::error("lastError: {}", lua::lastError());
+    } else {
+        log::info("Bootstrap.luau loaded");
+    }
+}
 
 $on_mod(Loaded) {
-    luax::Runtime::instance();
-}
+    log::info("LuauAPI codegen: {}", lua::codegenEnabled() ? "on" : "off");
+    log::info("LuauAPI memory: {} / {} bytes", lua::memoryUsage(), lua::memoryLimit());
 
-namespace {
-    std::string readBootstrapScript() {
-        auto path = Mod::get()->getResourcesDir() / "Bootstrap.luau";
-        std::ifstream file(path);
-        std::ostringstream buffer;
-        buffer << file.rdbuf();
-        return buffer.str();
-    }
+    queueInMainThread([] {
+        loadBootstrap();
+    });
 }
-
-class $modify(MenuLayer) {
-    bool init() {
-        if (!MenuLayer::init()) return false;
-        static bool bootstrapLoaded = false;
-        if (!bootstrapLoaded) {
-            if (luax::Runtime::instance().runScript(readBootstrapScript(), "@Bootstrap.luau")) {
-                bootstrapLoaded = true;
-            }
-        }
-        return true;
-    }
-};

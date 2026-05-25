@@ -10,20 +10,6 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 project(FishRNG VERSION 1.0.0)
 
-include(FetchContent)
-
-set(LUAU_BUILD_CLI   OFF CACHE BOOL "" FORCE)
-set(LUAU_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(LUAU_BUILD_WEB   OFF CACHE BOOL "" FORCE)
-set(LUAU_EXTERN_C    OFF CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-    luau
-    GIT_REPOSITORY https://github.com/luau-lang/luau.git
-    GIT_TAG        0.722
-)
-FetchContent_MakeAvailable(luau)
-
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
@@ -34,9 +20,4 @@ else()
 endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
-
 setup_geode_mod(${PROJECT_NAME})
-
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23)
-target_link_libraries(${PROJECT_NAME} Luau.VM Luau.Compiler Luau.Ast Luau.Require Luau.CodeGen)
-target_compile_definitions(${PROJECT_NAME} PRIVATE FISHRNG_LUAU=1)

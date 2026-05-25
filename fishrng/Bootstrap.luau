@@ -1,29 +1,43 @@
 local cocos = geode.cocos2d
-local actions = cocos.actions
 
 local Player = require("./Player")
 
-local overlay: OverlayManager = geode.OverlayManager.get()
-local director: CCDirector = cocos.CCDirector.sharedDirector()
-local win_width: number = director:getWinSize().width
+geode.hook("geode.gd.MenuLayer:init/0", function(self)
+    local director = cocos.CCDirector.sharedDirector()
+    if not director then return end
 
-local playerRoot: CCSprite = Player.create()
-local layer: TouchLayer = geode.TouchLayer.create()
+    local winSize = director:getWinSize()
 
-layer:addChild(playerRoot)
-overlay:addChild(layer)
-layer:addTapTarget(playerRoot, function(_tap: TapEvent)
-    -- print(("tapped at %.1f %.1f"):format(tap.x, tap.y))
+    local overlay = director:getNotificationNode()
+    if not overlay then return end
+
+    local playerRoot = Player.create()
+    if not playerRoot then return end
+    overlay:addChild(playerRoot)
+    playerRoot:setPosition({ x = winSize.width - 50, y = 0 })
+
+    local moveUp = cocos.CCMoveBy.create(2, { x = 0, y = 3 })
+    local moveDown = cocos.CCMoveBy.create(2, { x = 0, y = -3 })
+    if not moveUp or not moveDown then return end
+    
+    local bobUp = cocos.CCEaseSineInOut.create(moveUp)
+    local bobDown = cocos.CCEaseSineInOut.create(moveDown)
+    if not bobUp or not bobDown then return end
+
+    local bob = cocos.CCSequence.createWithTwoActions(bobUp, bobDown)
+    if not bob then return end
+    
+    local repeatBob = cocos.CCRepeatForever.create(bob)
+    if not repeatBob then return end
+
+    playerRoot:runAction(repeatBob)
+
+    local scheduler = director:getScheduler()
+    if not scheduler then return end
+    
+    (scheduler :: any):scheduleScriptFunc(function(_dt: number)
+        playerRoot:setRotation(Player.getWaterWaveRotation())
+    end, 0.01, false)
 end)
-playerRoot:setPosition(win_width - 50, 0)
 
-local bob_up: CCActionInterval = actions.CCEaseSineInOut.create(actions.CCMoveBy.create(2, 0, 3))
-local bob_down: CCActionInterval = actions.CCEaseSineInOut.create(actions.CCMoveBy.create(2, 0, -3))
-local bob: CCActionInterval = actions.CCSequence.create({ bob_up, bob_down })
-playerRoot:runAction(actions.CCRepeatForever.create(bob))
-
-Player.transitionIn(playerRoot)
-
-cocos.scheduler.schedule(function()
-    playerRoot:setRotation(Player.getWaterWaveRotation())
-end, 0.01)
+print("FishRNG loaded")
