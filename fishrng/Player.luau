@@ -10,13 +10,13 @@ function Player.create()
     local iconId = gm:getPlayerFrame()
 
     local sprite = gd.SimplePlayer.create(iconId)
-    sprite:updatePlayerFrame(iconId, 1)
-    sprite:setColor(gm:colorForIdx(gm:getPlayerColor()), gm:colorForIdx(gm:getPlayerColor2()))
+    sprite:updatePlayerFrame(iconId, 0)
+    sprite:setColors(gm:colorForIdx(gm:getPlayerColor()), gm:colorForIdx(gm:getPlayerColor2()))
     if gm:getPlayerGlow() then
         sprite:setGlowOutline(gm:colorForIdx(gm:getPlayerGlowColor()))
     end
-    sprite:setPosition(0, 20)
-    root:addCustomChild(sprite)
+    sprite:setPosition({ x = 0, y = 20 })
+    root:addChild(sprite)
 
     return root
 end
