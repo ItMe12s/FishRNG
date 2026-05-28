@@ -1,7 +1,22 @@
 local cocos = geode.cocos2d
 local gd = geode.gd
 
+local Boats = require("./game_Boats")
+
 local Player = {}
+
+Player.Data = {
+    boat = "Wooden",
+}
+local boatSprite = nil
+
+function Player:refreshBoat(root)
+    if boatSprite then
+        boatSprite:removeFromParentAndCleanup()
+    end
+    boatSprite = Boats.getSprite(Player.Data.boat)
+    root:addChild(boatSprite)
+end
 
 function Player.create()
     local root = cocos.CCSprite.create()
@@ -17,6 +32,8 @@ function Player.create()
     end
     sprite:setPosition({ x = 0, y = 20 })
     root:addChild(sprite)
+
+    Player:refreshBoat(root)
 
     return root
 end
