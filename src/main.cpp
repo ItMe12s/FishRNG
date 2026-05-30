@@ -7,15 +7,9 @@ namespace lua = imes::luauapi;
 
 $on_mod(Loaded) {
     queueInMainThread([] {
-        constexpr char const script[] = "Bootstrap.luau";
-
-        auto result = lua::runFile(Mod::get()->getResourcesDir(), script);
+        auto result = lua::runFile(Mod::get()->getResourcesDir(), "Bootstrap.luau");
         if (result.isErr()) {
-            log::error("{} failed: {}", script, result.unwrapErr());
-            auto lastError = lua::lastError();
-            if (!lastError.empty()) {
-                log::error("lastError: {}", lastError);
-            }
+            log::error("script failed: {}", result.unwrapErr());
         }
     });
 }

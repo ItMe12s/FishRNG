@@ -6,13 +6,16 @@ local Player = require("./game_Player")
 local alreadyInit = false
 
 local function init()
-    local director = cocos.CCDirector.sharedDirector()
-    local winWidth = director:getWinSize().width
+    local director: CCDirector? = cocos.CCDirector.sharedDirector()
+    if not director then return end
+    local winWidth: number = director:getWinSize().width
 
-    local playerRoot = Player.create()
+    local playerRoot: CCSprite? = Player.create()
+    if not playerRoot then return end
     playerRoot:setPosition({ x = winWidth - 50, y = 0 })
 
-    local om = gd.OverlayManager.get()
+    local om: OverlayManager? = gd.OverlayManager.get()
+    if not om then return end
     om:addChild(playerRoot)
 
     alreadyInit = true
